@@ -1,0 +1,29 @@
+version = 1
+
+[[annotations]]
+path = ["README.md", "tests/interop_samples/README.md", "tests/samples/README.md"]
+SPDX-FileCopyrightText = "2026 Thomas Ascher <thomas.ascher@gmx.at>"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["tests/interop_samples/opengps/*.x3p", "tests/interop_samples/*.xml"]
+SPDX-FileCopyrightText = "2007 Georg Wiora (NanoFocus AG), Jörg Seewig, Andreas Walther (NanoFocus AG), Mark A. Weber (NanoFocus AG)"
+SPDX-License-Identifier = "LGPL-3.0-or-later"
+
+[[annotations]]
+path = ["tests/xsd/iso25178-72-2017.xsd"]
+SPDX-FileCopyrightText = "2007 Georg Wiora (NanoFocus AG), Jörg Seewig (Universität Hannover), Andreas Walther (NanoFocus AG), Mark A. Weber (NanoFocus AG)"
+SPDX-License-Identifier = "LGPL-3.0-or-later"
+
+[[annotations]]
+path = ["tests/xsd/iso25178-72-fdam1.xsd"]
+SPDX-FileCopyrightText = [
+    "2007 Georg Wiora (NanoFocus AG), Jörg Seewig (Universität Hannover), Andreas Walther (NanoFocus AG), Mark A. Weber (NanoFocus AG)",
+    "2020 Jörg Seewig (Technische Universität Kaiserslautern)",
+]
+SPDX-License-Identifier = "LGPL-3.0-or-later"
+
+[[annotations]]
+path = ["tests/samples/*/*.x3p"]
+SPDX-FileCopyrightText = "2026 Thomas Ascher <thomas.ascher@gmx.at>"
+SPDX-License-Identifier = "CC0-1.0"

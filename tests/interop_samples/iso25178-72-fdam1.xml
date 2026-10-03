@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<p:ISO5436_2 xmlns:p="http://www.opengps.eu/2008/ISO5436_2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengps.eu/2008/ISO5436_2 http://www.opengps.eu/2008/ISO5436_2/ISO5436_2.xsd">
+    <Record1>
+        <Revision>ISO25178-72:2017/DAM1</Revision>
+        <!-- "SUR" for surface or "PRF" for profile -->
+        <FeatureType>SUR</FeatureType>
+        <!-- Axis description-->
+        <Axes>
+            <CX>
+                <!-- "I" for Incremental, "A" for Absolute -->
+                <AxisType>I</AxisType>
+                <!-- Datatype: "I" for int16, "L" for int32, "F" for float32, "D" for float64-->
+                <DataType>D</DataType>
+                <!-- Increment is the length of one increment in Metre -->
+                <Increment>1.60160000000000E-0006</Increment>
+                <!-- The offset of the axis is optional-->
+                <Offset>0.00000000000000E+0000</Offset>
+            </CX>
+            <CY>
+                <AxisType>I</AxisType>
+                <DataType>D</DataType>
+                <Increment>1.60160000000000E-0006</Increment>
+                <Offset>0.00000000000000E+0000</Offset>
+            </CY>
+            <CZ>
+                <!-- Example for an absolute axis. -->
+                <AxisType>A</AxisType>
+                <!-- Double precision data -->
+                <DataType>D</DataType>
+                <Increment>1</Increment>
+                <Offset>0.00000000000000E+0000</Offset>
+            </CZ>
+            <!-- The rotation matrix is optional. A unit transform is specified here -->
+            <Rotation>
+                <r11>1.0</r11>
+                <r12>0.0</r12>
+                <r13>0.0</r13>
+                <r21>0.0</r21>
+                <r22>1.0</r22>
+                <r23>0.0</r23>
+                <r31>0.0</r31>
+                <r32>0.0</r32>
+                <r33>1.0</r33>
+            </Rotation>
+        </Axes>
+    </Record1>
+    <Record2>
+        <!-- Optional -->
+        <Date>2007-04-30T13:58:02.6+02:00</Date>
+        <Creator>Name of measuring person</Creator>
+        <!-- Optional -->
+        <Instrument>
+            <Manufacturer>Sample Metrology Inc</Manufacturer>
+            <Model>Sample Instrument Model</Model>
+            <Serial>12345abc</Serial>
+            <Version>Software V1.0 ,Hardware V1.0</Version>
+        </Instrument>
+        <CalibrationDate>2007-04-30T13:58:02.6+02:00</CalibrationDate>
+        <ProbingSystem>
+            <Type>NonContacting</Type>
+            <Identification>LensName,Setupname,...</Identification>
+        </ProbingSystem>
+        <Comment>This is a user comment specific to this data set</Comment>
+    </Record2>
+    <!-- Record 3 contains one set of measurement data in a Data-Tag. -->
+    <Record3>
+        <MatrixDimension>
+            <SizeX>4</SizeX>
+            <SizeY>4</SizeY>
+            <SizeZ>1</SizeZ>
+        </MatrixDimension>
+        <DataList>
+            <Datum>4.86219120804151E-0006</Datum>
+            <Datum>3.46341436648013E-0006</Datum>
+            <Datum>-8.08368571682830E-0006</Datum>
+            <Datum>-5.79793099037002E-0006</Datum>
+            <Datum>8.57622027393310E-0006</Datum>
+            <Datum>1.04759602566142E-0006</Datum>
+            <Datum>1.01879225277798E-0006</Datum>
+            <!-- missing data points are represented by an empty tag-->
+            <Datum/>
+            <Datum>8.23683772970184E-0006</Datum>
+            <Datum>7.97872489327661E-0006</Datum>
+            <Datum>-5.57459388341694E-0006</Datum>
+            <Datum>-2.33247858849220E-0006</Datum>
+            <Datum>6.75397146760858E-0006</Datum>
+            <Datum>4.20737549074718E-0006</Datum>
+            <Datum>6.42069248110950E-0006</Datum>
+            <Datum>-2.15696638464903E-0006</Datum>
+        </DataList>
+    </Record3>
+    <Record4>
+        <ChecksumFile>md5checksum.hex</ChecksumFile>
+    </Record4>
+</p:ISO5436_2>

@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: 2026 Thomas Ascher <thomas.ascher@gmx.at>
+#
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "x3pio"
+dynamic = ["version"]
+description = "Read and write ISO 25178-72 x3p surface, profile and point cloud files"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Thomas Ascher", email = "thomas.ascher@gmx.at" }]
+keywords = ["x3p", "iso-25178", "surface-texture", "metrology", "point-cloud"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
+]
+dependencies = ["numpy>=1.24", "defusedxml>=0.7"]
+
+[project.urls]
+Homepage = "https://github.com/aschet/x3pio"
+Documentation = "https://aschet.github.io/x3pio/"
+Source = "https://github.com/aschet/x3pio"
+Issues = "https://github.com/aschet/x3pio/issues"
+Changelog = "https://github.com/aschet/x3pio/releases"
+
+[project.scripts]
+x3pio = "x3pio.cli:main"
+
+[dependency-groups]
+dev = [
+    "bandit[toml]>=1.7",
+    "build>=1.2",
+    "mypy>=1.10",
+    "pip-audit>=2.7",
+    "pre-commit>=3.7",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "reuse>=5.0",
+    "ruff>=0.5",
+    "twine>=5.1",
+    "types-defusedxml>=0.7",
+    "vulture>=2.11",
+    "xmlschema>=3.0",
+]
+docs = ["furo>=2024.8", "myst-parser>=4.0", "sphinx>=8.0"]
+
+[tool.hatch.version]
+path = "src/x3pio/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/x3pio"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/examples",
+    "/README.md",
+    "/LICENSE",
+    "/LICENSES",
+    "/REUSE.toml",
+    "/.pre-commit-config.yaml",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+pythonpath = ["tests"]
+addopts = "--doctest-modules --strict-markers --strict-config --import-mode=importlib"
+testpaths = ["tests", "src"]
+
+[tool.coverage.report]
+fail_under = 75
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF", "D", "NPY", "PT", "ERA", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D100", "D101", "D102", "D103", "S101"]
+
+[tool.ruff.format]
+exclude = ["*.md"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+files = ["src", "tests"]
+strict = true
+
+[tool.vulture]
+paths = ["src"]
+min_confidence = 80
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
