@@ -229,6 +229,17 @@ def test_the_extent_of_a_surface_is_the_edges_of_its_cells() -> None:
     assert (layer.extent[2], layer.extent[3]) == (y_values[0] - 0.25, y_values[-1] + 0.25)
 
 
+def test_a_profile_tells_whether_it_is_a_regular_grid() -> None:
+    assert Profile.from_array(np.zeros(3), x_scale=1.0).is_regular_grid
+    assert not Profile.from_points(np.zeros((3, 3))).is_regular_grid
+    # A diagonal profile: x incremental, but a y coordinate for each point
+    layer = Profile.from_array(np.zeros(3), x_scale=1.0).layers[0]
+    header = Header(y=Axis(AxisType.ABSOLUTE))
+    diagonal = Profile.from_layers([ProfileLayer(layer.z, None, np.arange(3.0), header=header)])
+    assert not diagonal.is_regular_grid
+    assert diagonal.layers[0].x_values.tolist() == [0.0, 1.0, 2.0]
+
+
 def test_every_kind_of_layer_tells_whether_it_is_a_regular_grid() -> None:
     assert Surface.from_array(np.zeros((2, 3)), x_scale=1.0, y_scale=1.0).layers[0].is_regular_grid
     assert Profile.from_array(np.zeros(3), x_scale=1.0).layers[0].is_regular_grid

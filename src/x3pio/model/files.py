@@ -1169,6 +1169,23 @@ class Profile(X3pFile):
         """The layers, which the file keeps: the same objects come back on every access."""
         return self._layers
 
+    @property
+    def is_regular_grid(self) -> bool:
+        """Whether the x and y axes are both incremental, so the points are evenly spaced.
+
+        The positions are then described completely by ``x_values`` of the layers. A profile that
+        stores a coordinate for each point, such as one with unevenly spaced points or one along a
+        diagonal, is not regular. ``x_values`` and ``spacing`` need only an incremental x axis.
+
+        >>> import numpy as np
+        >>> import x3pio
+        >>> x3pio.Profile.from_array(np.zeros(4), x_scale=1e-6).is_regular_grid
+        True
+        >>> x3pio.Profile.from_points(np.zeros((4, 3))).is_regular_grid
+        False
+        """
+        return self.header.x.is_incremental and self.header.y.is_incremental
+
 
 class Surface(X3pFile):
     """A surface: a matrix of points, in one or several layers.
