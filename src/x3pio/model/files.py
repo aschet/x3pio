@@ -45,7 +45,7 @@ the instrument or the software that wrote the file knows what the global system 
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from typing import Any, ClassVar, TypeVar, Unpack
+from typing import IO, Any, ClassVar, TypeVar, Unpack
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -666,7 +666,7 @@ class PointCloud(X3pFile):
         return self.layers[0]
 
 
-def parse_file(data: bytes, *, verify: bool = True) -> X3pFile:
+def parse_file(data: bytes | IO[bytes], *, verify: bool = True) -> X3pFile:
     """Parse the content of an x3p file into a profile, a surface or a point cloud.
 
     :param verify: Check the MD5 checksums stored in the file, of ``main.xml`` and of the binary

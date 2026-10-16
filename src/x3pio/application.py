@@ -9,6 +9,7 @@ The types of the data are in ``x3pio.model``.
 
 from __future__ import annotations
 
+import os
 from typing import Unpack
 
 import numpy as np
@@ -43,6 +44,9 @@ def read(path: PathOrStream, *, verify: bool = True) -> X3pFile:
     :raises X3pChecksumError: If ``verify`` and a stored checksum does not match, so the file was
         changed or damaged after it was written.
     """
+    if isinstance(path, (str, os.PathLike)):
+        with open(path, "rb") as stream:  # the compressed content is not held in memory as a whole
+            return parse_file(stream, verify=verify)
     return parse_file(read_bytes(path), verify=verify)
 
 

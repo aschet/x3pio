@@ -18,7 +18,7 @@ from __future__ import annotations
 import math
 import os
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -56,8 +56,11 @@ if TYPE_CHECKING:
 __all__ = ["describe", "parse", "records", "serialize"]
 
 
-def parse(data: bytes, *, verify: bool) -> dict[str, Any]:
+def parse(data: bytes | IO[bytes], *, verify: bool) -> dict[str, Any]:
     """Parse the content of an x3p file into the fields of an :class:`~x3pio.X3pFile`.
+
+    ``data`` is the content, or a seekable binary stream that holds it, from which only what is
+    needed is read.
 
     A set of known deviations from the standard is tolerated, see :mod:`x3pio.codec`.
 
