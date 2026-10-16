@@ -581,7 +581,7 @@ class X3pFile(ABC):
         """
         resolved = get_data_type(data_type)
         resolved_increment = (
-            suggest_scale(self._cube()[0], resolved) if increment == "auto" else increment
+            suggest_scale(self._cube()[0], resolved.type) if increment == "auto" else increment
         )
         validate_increment(resolved_increment)
         z = replace(self.header.z, data_type=resolved.type, increment=resolved_increment)
@@ -922,7 +922,7 @@ def _matrix_file(
         flat = matrix.reshape(flat.shape)
     resolved_type = get_data_type(options.get("z_type", DataType.FLOAT64))
     z_scale = options.get("z_scale", "auto")
-    increment = suggest_scale(matrix, resolved_type) if z_scale == "auto" else z_scale
+    increment = suggest_scale(matrix, resolved_type.type) if z_scale == "auto" else z_scale
     header = Header(
         x=Axis(AxisType.INCREMENTAL, DataType.FLOAT64, x_scale),
         y=Axis(AxisType.INCREMENTAL, DataType.FLOAT64, y_scale),
@@ -959,7 +959,7 @@ def _absolute_file(cls: type[X3pFile], points: np.ndarray, options: PointOptions
         Axis(
             AxisType.ABSOLUTE,
             resolved_type.type,
-            suggest_scale(points[..., index], resolved_type) if scale == "auto" else scale,
+            suggest_scale(points[..., index], resolved_type.type) if scale == "auto" else scale,
         )
         for index in range(3)
     ]

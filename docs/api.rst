@@ -65,7 +65,6 @@ Coordinates
    :members:
 .. autoclass:: x3pio.Placement
    :members:
-.. autofunction:: x3pio.validate_rotation
 
 Header and Metadata
 -------------------
@@ -84,7 +83,6 @@ Header and Metadata
 .. autoclass:: x3pio.Instrument
 .. autoclass:: x3pio.ProbingSystem
 .. autoclass:: x3pio.ProbingType
-.. autofunction:: x3pio.validate_increment
 
 Data Types and Storage
 ----------------------
@@ -93,16 +91,7 @@ Data Types and Storage
    :no-members:
 
 .. autoclass:: x3pio.DataType
-.. autoclass:: x3pio.DataTypeInfo
-   :members:
-.. py:data:: x3pio.DATA_TYPES
-
-   The :class:`DataTypeInfo` of each :class:`DataType`.
-
-.. autofunction:: x3pio.get_data_type
 .. autofunction:: x3pio.suggest_scale
-.. autofunction:: x3pio.encode_raw
-.. autofunction:: x3pio.decode_raw
 .. autoclass:: x3pio.DataStorage
 
 Vendor Extensions

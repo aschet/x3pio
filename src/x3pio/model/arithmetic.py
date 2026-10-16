@@ -180,7 +180,7 @@ def rescaled(header: Header, z: np.ndarray, x: np.ndarray | None, y: np.ndarray 
         if array is None or axis.is_incremental or not info.is_integer:
             axes[name] = axis
         else:
-            axes[name] = replace(axis, increment=suggest_scale(array, info))
+            axes[name] = replace(axis, increment=suggest_scale(array, info.type))
     return replace(header, **axes)
 
 

@@ -23,8 +23,8 @@ from x3pio import (
     Surface,
     X3pFile,
     X3pFormatError,
-    validate_rotation,
 )
+from x3pio.model.geometry import validate_rotation
 
 OFFSET = (0.01, 0.02, 0.003)
 _C, _S = np.cos(0.3), np.sin(0.3)

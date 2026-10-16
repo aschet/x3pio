@@ -89,22 +89,22 @@ def test_encode_rejects_float32_overflow() -> None:
 
 
 def test_suggest_scale_is_one_for_floats() -> None:
-    assert suggest_scale(np.array([1e-9, 5.0]), get_data_type(DataType.FLOAT32)) == 1.0
+    assert suggest_scale(np.array([1e-9, 5.0]), DataType.FLOAT32) == 1.0
 
 
 @pytest.mark.parametrize("data_type", [DataType.INT16, DataType.INT32])
 def test_suggest_scale_fits_the_largest_magnitude(data_type: DataType) -> None:
     resolved = get_data_type(data_type)
     values = np.array([-3.7e-6, 1.1e-6, 9.9e-6])
-    scale = suggest_scale(values, resolved)
+    scale = suggest_scale(values, resolved.type)
     raw = encode_raw(values, resolved, scale)
     assert np.abs(raw).max() == np.iinfo(resolved.dtype).max
 
 
 def test_suggest_scale_defaults_to_one_without_finite_values() -> None:
     resolved = get_data_type(DataType.INT16)
-    assert suggest_scale(np.array([np.nan]), resolved) == 1.0
-    assert suggest_scale(np.zeros(3), resolved) == 1.0
+    assert suggest_scale(np.array([np.nan]), resolved.type) == 1.0
+    assert suggest_scale(np.zeros(3), resolved.type) == 1.0
 
 
 @pytest.mark.parametrize("data_type", [DataType.INT16, DataType.INT32])
@@ -114,6 +114,8 @@ def test_suggested_scale_never_overflows(data_type: DataType) -> None:
     rng = np.random.default_rng(0)
     for max_abs in rng.uniform(1e-12, 1e3, 5000):
         raw = encode_raw(
-            np.array([-max_abs, max_abs]), resolved, suggest_scale(np.array([max_abs]), resolved)
+            np.array([-max_abs, max_abs]),
+            resolved,
+            suggest_scale(np.array([max_abs]), resolved.type),
         )
         assert raw.max() == limit

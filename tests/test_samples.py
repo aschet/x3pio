@@ -24,9 +24,9 @@ from x3pio import (
     Revision,
     Surface,
     X3pFile,
-    get_data_type,
 )
 from x3pio.cli import main
+from x3pio.model.datatypes import get_data_type
 
 FIRST = Revision.ISO5436_2000
 AMENDED = Revision.ISO25178_72_2017_DAM1
