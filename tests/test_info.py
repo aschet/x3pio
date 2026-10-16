@@ -107,7 +107,7 @@ def test_a_path_is_read_and_the_file_is_closed(tmp_path: Path) -> None:
     path.unlink()  # not held open (matters on Windows)
 
 
-def test_a_stream_that_cannot_seek_is_read_whole() -> None:
+def test_a_stream_that_cannot_seek_is_refused() -> None:
     class Pipe(io.RawIOBase):
         def __init__(self, data: bytes) -> None:
             self._buffer = io.BytesIO(data)
@@ -124,8 +124,8 @@ def test_a_stream_that_cannot_seek_is_read_whole() -> None:
             return len(data)
 
     pipe = io.BufferedReader(Pipe(_blob(_surface())))  # type: ignore[type-var]
-    summary = x3pio.info(pipe)
-    assert summary.shape == (3, 4)
+    with pytest.raises(io.UnsupportedOperation, match="seek"):
+        x3pio.info(pipe)
 
 
 def test_the_data_is_not_read() -> None:

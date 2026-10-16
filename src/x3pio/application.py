@@ -56,11 +56,13 @@ def info(path: PathOrStream, *, verify: bool = True) -> FileInfo:
     The zip directory, ``main.xml`` and the vendor specific files are read. The binary data and
     validity files are not, so damage to them is not detected.
 
-    :param path: Path to an ``.x3p`` file, or an open binary file object; a stream that can seek
-        is read only where needed.
+    :param path: Path to an ``.x3p`` file, or an open binary file object that can seek, from which
+        only the description is read.
     :param verify: Check the MD5 checksum of the description, ``main.xml``. The checksums of the
         data files are not checked, since the data is not read.
     :returns: The description as a :class:`FileInfo`.
+    :raises io.UnsupportedOperation: If ``path`` is a stream that cannot seek: the description of a
+        zip archive cannot be found without reading it whole.
     :raises X3pFormatError: If the file is not an x3p file, or is damaged
         beyond what can be tolerated.
     :raises X3pChecksumError: If ``verify`` and the checksum of ``main.xml`` does not match.

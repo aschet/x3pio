@@ -15,6 +15,7 @@ direction, and checks the checksums that the file states.
 
 from __future__ import annotations
 
+import io
 import math
 import os
 from collections.abc import Sequence
@@ -222,6 +223,7 @@ def describe(source: PathOrStream, *, verify: bool) -> FileInfo:
     The directory of the container, ``main.xml`` and the vendor specific files are read. The
     binary files of the coordinates are not, so their sizes and checksums are not checked.
 
+    :raises io.UnsupportedOperation: If ``source`` is a stream that cannot seek.
     :raises X3pFormatError: If ``source`` is not an x3p file, or is damaged beyond what can
         be tolerated.
     :raises X3pChecksumError: If ``verify`` and the checksum of ``main.xml`` does not match.
@@ -229,7 +231,12 @@ def describe(source: PathOrStream, *, verify: bool) -> FileInfo:
     if isinstance(source, (str, os.PathLike)):
         with open(source, "rb") as stream:
             return _describe(Container(stream), verify)
-    return _describe(Container(source if source.seekable() else source.read()), verify)
+    if not source.seekable():
+        raise io.UnsupportedOperation(
+            "info needs a path or a stream that can seek, since a zip archive can only be read "
+            "selectively with seek; the data would have to be read whole"
+        )
+    return _describe(Container(source), verify)
 
 
 def _describe(container: Container, verify: bool) -> FileInfo:
