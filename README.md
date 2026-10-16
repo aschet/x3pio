@@ -42,19 +42,6 @@ print(x3p.layers[0].z.shape)                # (480, 640), the heights in metres
 print(x3p.layers[0].points().shape)         # (480, 640, 3), x, y and z in metres
 print(x3p.metadata.instrument.model)        # Scanner 3000
 ```
-
-`x3pio.read` returns a `Profile`, a `Surface` or a `PointCloud`, according to the file. The data
-is in the layers: `x3p.layers` holds them. A layer gives its heights `z`, its coordinates `x` and
-`y` and its `points()`, which are in the global coordinate system. A point that was not measured is
-`NaN`. A point cloud has exactly one layer, which is its `layer`, and `x3pio.write_points` writes
-it.
-
-The arrays of a layer belong to the file: change them in place and `save` the file again, or give
-a file other layers with `with_layers`, which keeps its metadata.
-
-Without `metadata`, a new file names x3pio as its software. `x3pio.info(path)` reads the
-description of a file, its axes, shape, metadata and vendor files, without reading the data.
-
 ## Documentation
 
 - [x3p Format](https://aschet.github.io/x3pio/format.html): what an x3p file contains.
