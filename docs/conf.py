@@ -29,6 +29,12 @@ nitpicky = True
 nitpick_ignore = [
     ("py:class", "numpy._typing._array_like.ArrayLike"),
     ("py:class", "ArrayLike"),
+    ("py:class", "numpy._typing._array_like.NDArray"),
+    ("py:class", "NDArray"),
+    ("py:class", "np.float64"),
+    ("py:class", "np.bool_"),
+    ("py:class", "numpy.float64"),
+    ("py:class", "numpy.bool_"),
 ]
 
 intersphinx_mapping = {

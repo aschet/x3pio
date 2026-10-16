@@ -15,6 +15,7 @@ from helpers import (
     SURFACE,
     absolute,
     array_file,
+    as_surface,
     build,
     edit_main,
     flat_points,
@@ -36,6 +37,7 @@ from x3pio import (
     SurfaceLayer,
     X3pFile,
     X3pFormatError,
+    read,
 )
 
 ALL_STORAGES = list(DataStorage)
@@ -50,7 +52,7 @@ def test_write_read_roundtrip_via_path(tmp_path: Path) -> None:
     path = tmp_path / "surface.x3p"
     x3pio.write(path, SURFACE, x_scale=1e-6, y_scale=2e-6)
 
-    x3p = Surface.open(path)
+    x3p = as_surface(read(path))
 
     assert stacked(x3p)[0].shape == (2, 3)
     np.testing.assert_allclose(stacked(x3p)[0], SURFACE, rtol=1e-12, equal_nan=True)
@@ -162,7 +164,7 @@ def test_layers_are_kept() -> None:
     stack = np.arange(24, dtype=float).reshape(2, 3, 4) * 1e-6
     buffer = io.BytesIO()
     x3pio.write(buffer, stack, x_scale=1e-6, y_scale=1e-6)
-    x3p = Surface.open(io.BytesIO(buffer.getvalue()))
+    x3p = as_surface(read(io.BytesIO(buffer.getvalue())))
     assert stacked(x3p).shape == (2, 3, 4)
     assert np.array_equal(stacked(x3p), stack)
     assert x3p.is_regular_grid  # of every layer, they share their axes
@@ -204,7 +206,7 @@ def test_the_type_decides_what_a_file_can_be_asked() -> None:
 
 
 def test_axes_follow_the_standard() -> None:
-    x3p = Surface.loads(build())
+    x3p = as_surface(X3pFile.loads(build()))
     assert x3p.layers[0].x_values.tolist() == pytest.approx([0.0, 1e-6, 2e-6])
     assert x3p.layers[0].y_values.tolist() == pytest.approx([0.0, 2e-6])
     assert x3p.is_regular_grid
@@ -234,7 +236,7 @@ def _absolute_surface(x_type: DataType, y_type: DataType) -> Surface:
         y=Axis(AxisType.ABSOLUTE, y_type, 1e-6 if y_type.name.startswith("INT") else 1.0),
         z=Axis(AxisType.ABSOLUTE, DataType.FLOAT64, 1.0),
     )
-    return Surface.from_stacked(header, z, x=x, y=y)
+    return Surface._from_stacked(header, z, x=x, y=y)
 
 
 @pytest.mark.parametrize("storage", ALL_STORAGES)
@@ -243,7 +245,7 @@ def _absolute_surface(x_type: DataType, y_type: DataType) -> Surface:
 )
 def test_absolute_x_and_y_axes_roundtrip(storage: DataStorage, x_type: DataType) -> None:
     original = _absolute_surface(x_type, DataType.INT32)
-    again = Surface.loads(original.dumps(storage=storage))
+    again = as_surface(X3pFile.loads(original.dumps(storage=storage)))
     assert stacked(again, "x") is not None
     assert stacked(again, "y") is not None
     assert stacked(again).shape == (1, 2, 3)
@@ -356,11 +358,11 @@ def test_inconsistent_files_cannot_be_written(
     file_type: type[X3pFile], header: Header, data: np.ndarray, message: str
 ) -> None:
     with pytest.raises(X3pFormatError, match=message):
-        file_type.from_stacked(header, data).dumps()
+        file_type._from_stacked(header, data).dumps()
 
 
 def test_incremental_axis_with_coordinates_cannot_be_written() -> None:
-    x3p = Surface.from_stacked(Header(), np.zeros((1, 1, 1)), x=np.zeros((1, 1, 1)))
+    x3p = Surface._from_stacked(Header(), np.zeros((1, 1, 1)), x=np.zeros((1, 1, 1)))
     with pytest.raises(X3pFormatError, match="incremental, but has coordinates"):
         x3p.dumps()
 
@@ -368,7 +370,7 @@ def test_incremental_axis_with_coordinates_cannot_be_written() -> None:
 def test_absolute_axis_with_wrongly_shaped_coordinates_cannot_be_written() -> None:
     header = Header(x=Axis(AxisType.ABSOLUTE))
     with pytest.raises(X3pFormatError, match="shaped like data"):
-        Surface.from_stacked(header, np.zeros((1, 2, 2)), x=np.zeros((1, 1, 1))).dumps()
+        Surface._from_stacked(header, np.zeros((1, 2, 2)), x=np.zeros((1, 1, 1))).dumps()
 
 
 @pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
@@ -452,7 +454,7 @@ def test_larger_file_roundtrip() -> None:
     heights[5, 7] = np.nan
     buffer = io.BytesIO()
     x3pio.write(buffer, heights, x_scale=1e-6, y_scale=1e-6)
-    again = Surface.open(io.BytesIO(buffer.getvalue()))
+    again = as_surface(read(io.BytesIO(buffer.getvalue())))
     assert np.array_equal(stacked(again)[0], heights, equal_nan=True)
 
 
@@ -491,3 +493,53 @@ def test_a_placement_that_is_not_finite_or_not_a_rotation_cannot_be_written() ->
     skew = x3p.with_placement(Placement._unchecked(np.eye(3) * 2.0, np.zeros(3)))
     with pytest.raises(X3pFormatError, match="within"):
         skew.dumps()
+
+
+def test_a_bad_value_and_a_bad_file_are_value_errors() -> None:
+    with pytest.raises(ValueError, match="not a zip archive"):
+        x3pio.X3pFile.loads(b"not an x3p file at all")
+    with pytest.raises(ValueError, match="positive"):
+        x3pio.Surface.from_array(np.zeros((2, 2)), x_scale=-1.0, y_scale=1.0)
+    assert issubclass(x3pio.X3pChecksumError, ValueError)
+
+
+def test_read_takes_a_path_and_a_stream(tmp_path: Path) -> None:
+    surface = Surface.from_array(np.arange(6.0).reshape(2, 3), x_scale=1e-6, y_scale=2e-6)
+    path = tmp_path / "surface.x3p"
+    surface.save(path)
+
+    assert read(path) == read(io.BytesIO(path.read_bytes())) == surface
+    with open(path, "rb") as stream:
+        assert read(stream) == surface
+
+
+def test_loads_is_the_counterpart_of_dumps() -> None:
+    surface = Surface.from_array(np.arange(6.0).reshape(2, 3), x_scale=1e-6, y_scale=2e-6)
+    assert X3pFile.loads(surface.dumps()) == surface
+    assert X3pFile.loads(surface.dumps()) == read(io.BytesIO(surface.dumps()))
+
+
+def test_the_repr_of_a_file_is_one_line_with_what_identifies_it() -> None:
+    surface = Surface.from_array(np.zeros((480, 640)), x_scale=1e-6, y_scale=1e-6)
+    profile = Profile.from_array(np.zeros((2, 200)), x_scale=1e-6)
+    cloud = PointCloud.from_points(np.zeros((5000, 3)))
+
+    assert repr(surface) == "<Surface ISO25178-72:2017/DAM1 binary, 1 layer, 480 x 640, float64>"
+    assert repr(profile) == "<Profile ISO25178-72:2017/DAM1 binary, 2 layers, 200, float64>"
+    assert repr(cloud) == "<PointCloud ISO25178-72:2017/DAM1 binary, 1 layer, 5000, float64>"
+    assert repr(surface.layers[0]) == "<SurfaceLayer 480 x 640, regular grid>"
+    assert repr(cloud.layer) == "<PointLayer 5000>"
+    buffer = io.BytesIO(surface.dumps())
+    assert repr(x3pio.info(buffer)) == (
+        "<FileInfo surface ISO25178-72:2017/DAM1 binary, 1 layer, 480 x 640, float64>"
+    )
+
+
+def test_the_storage_form_is_checked_when_it_is_set() -> None:
+    surface = Surface.from_array(np.zeros((2, 2)), x_scale=1.0, y_scale=1.0)
+    surface.storage = DataStorage.XML
+    assert surface.storage is DataStorage.XML
+    with pytest.raises(TypeError, match="DataStorage"):
+        surface.storage = "binary"  # type: ignore[assignment]
+    with pytest.raises(TypeError, match="DataStorage"):
+        Surface.from_array(np.zeros((2, 2)), x_scale=1.0, y_scale=1.0, storage="text")  # type: ignore[arg-type]

@@ -93,7 +93,7 @@ def get_data_type(identifier: DataType) -> DataTypeInfo:
         raise X3pFormatError(f"Unknown x3p data type {identifier!r}") from None
 
 
-def suggest_scale(values: np.ndarray, data_type: DataTypeInfo) -> float:
+def suggest_scale(values: np.ndarray, data_type: DataType) -> float:
     """Pick the increment that stores ``values`` in ``data_type`` at the highest resolution.
 
     A floating point type stores metres directly, so the increment is ``1``.
@@ -103,12 +103,13 @@ def suggest_scale(values: np.ndarray, data_type: DataTypeInfo) -> float:
     :param values: Coordinates in metres; non-finite values are ignored.
     :param data_type: Target storage type.
 
-    >>> suggest_scale(np.array([0.0, 1.0]), get_data_type(DataType.FLOAT64))
+    >>> suggest_scale(np.array([0.0, 1.0]), DataType.FLOAT64)
     1.0
-    >>> suggest_scale(np.array([0.0, 32767e-6]), get_data_type(DataType.INT16))
+    >>> suggest_scale(np.array([0.0, 32767e-6]), DataType.INT16)
     1e-06
     """
-    if not data_type.is_integer:
+    info = get_data_type(data_type)
+    if not info.is_integer:
         return 1.0
     finite = values[np.isfinite(values)]
     if finite.size == 0:
@@ -116,7 +117,7 @@ def suggest_scale(values: np.ndarray, data_type: DataTypeInfo) -> float:
     max_abs = float(np.abs(finite).max())
     if max_abs == 0.0:
         return 1.0
-    limit = float(np.iinfo(data_type.dtype).max)
+    limit = float(np.iinfo(info.dtype).max)
     return max_abs / limit
 
 

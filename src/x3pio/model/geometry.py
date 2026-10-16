@@ -31,7 +31,7 @@ import math
 from enum import Enum, auto
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 from ..exceptions import X3pFormatError
 
@@ -166,12 +166,12 @@ class Placement:
         return cls(rotation=rotation)
 
     @property
-    def rotation(self) -> np.ndarray:
+    def rotation(self) -> NDArray[np.float64]:
         """The ``3 x 3`` rotation matrix, read-only."""
         return self._rotation
 
     @property
-    def offset(self) -> np.ndarray:
+    def offset(self) -> NDArray[np.float64]:
         """The offsets of the x, y and z axis in metres, read-only."""
         return self._offset
 
@@ -185,7 +185,7 @@ class Placement:
         """Whether the placement leaves the coordinates as they are."""
         return not self.has_rotation and not self._offset.any()
 
-    def apply(self, points: ArrayLike) -> np.ndarray:
+    def apply(self, points: ArrayLike) -> NDArray[np.float64]:
         """Turn view coordinates into global ones: ``rotation @ point + offset`` for each point.
 
         :param points: View coordinates in metres, shaped ``(..., 3)``. A point with ``NaN`` in

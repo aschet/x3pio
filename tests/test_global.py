@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 import x3pio
-from helpers import absolute, array_file, build, flat_points, shaped_points, stacked
+from helpers import absolute, array_file, as_surface, build, flat_points, shaped_points, stacked
 from x3pio import (
     AxisType,
     CoordinateSystem,
@@ -32,7 +32,7 @@ TILT = np.array([[1.0, 0.0, 0.0], [0.0, 0.8, -0.6], [0.0, 0.6, 0.8]])
 
 
 def _surface() -> Surface:
-    return Surface.loads(build())
+    return as_surface(X3pFile.loads(build()))
 
 
 def _transformed(rotation: np.ndarray | None) -> Surface:
@@ -66,7 +66,7 @@ def test_a_profile_is_layers_of_points() -> None:
 
 def test_several_layers_have_the_same_kind_of_shape() -> None:
     x3p = Surface.from_array(np.zeros((2, 3, 4)), x_scale=1.0, y_scale=1.0)
-    again = Surface.loads(x3p.dumps())
+    again = as_surface(X3pFile.loads(x3p.dumps()))
     assert stacked(again).shape == (2, 3, 4)
     assert len(again.layers) == 2
     assert again.is_regular_grid
@@ -86,13 +86,13 @@ def test_a_point_cloud_has_no_layers() -> None:
 
 
 def test_two_dimensional_data_cannot_be_written_as_a_surface() -> None:
-    x3p = x3pio.Surface.from_stacked(Header(), np.zeros((2, 3)))
+    x3p = x3pio.Surface._from_stacked(Header(), np.zeros((2, 3)))
     with pytest.raises(x3pio.X3pFormatError, match="must be 2-D"):
         x3p.dumps()
 
 
 def test_profile_property_of_hand_built_data() -> None:
-    x3p = x3pio.Profile.from_stacked(Header(), np.arange(4.0).reshape(1, 4))
+    x3p = x3pio.Profile._from_stacked(Header(), np.arange(4.0).reshape(1, 4))
     assert stacked(x3p)[0].tolist() == [0.0, 1.0, 2.0, 3.0]
 
 

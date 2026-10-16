@@ -32,8 +32,8 @@ def _read(blob: bytes) -> x3pio.X3pFile:
     return x3pio.X3pFile.loads(blob)
 
 
-def test_a_tolerated_file_is_written_back_as_the_standard_gives_it() -> None:
-    blob = edit_main(build(), replace("<Revision>ISO25178-72:2017/DAM1", "<Revision>other"))
+def test_a_file_without_a_revision_is_written_back_as_the_standard_gives_it() -> None:
+    blob = edit_main(build(), drop(r"\s*<Revision>ISO25178-72:2017/DAM1</Revision>"))
     x3p = _read(blob)
     assert x3p.revision is x3pio.Revision.ISO5436_2000
     assert "<Revision>ISO5436 - 2000</Revision>" in unzip(x3p.dumps())["main.xml"].decode()

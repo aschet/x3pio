@@ -9,12 +9,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
-from .extensions import VendorExtensions
 from .geometry import Placement
 from .header import FeatureType, Header, Metadata, Revision
 from .storage import DataStorage
 
-__all__ = ["FileDescription", "FileInfo"]
+__all__ = ["ExtensionFile", "FileDescription", "FileInfo"]
 
 
 class FileDescription(Protocol):
@@ -54,19 +53,33 @@ class FileDescription(Protocol):
         """``Record2``, or ``None`` if the file has none."""
         ...
 
-    @property
-    def extensions(self) -> VendorExtensions:
-        """The vendor specific extension files."""
-        ...
-
 
 @dataclass(frozen=True)
+class ExtensionFile:
+    """A ``VendorSpecificID`` of a file and the vendor file that it names, as :func:`info` lists it.
+
+    The content of the file is not read. Use :func:`~x3pio.read` and
+    the ``extensions`` of the file for it.
+
+    :param vendor_id: The ``VendorSpecificID``. In ISO 25178-72:2017 it is the one of the vendor,
+        shared by all its files.
+    :param path: The path of the file in the container, relative to ``main.xml``; ``None`` for an
+        ID that names no file.
+    :param size: The size of the file in bytes, as the archive declares it; ``None`` without a file.
+    """
+
+    vendor_id: str
+    path: str | None = None
+    size: int | None = None
+
+
+@dataclass(frozen=True, repr=False)
 class FileInfo:
     """The description of an x3p file: everything except the coordinates and the validity bits.
 
     Returned by :func:`x3pio.info`. It provides a :class:`FileDescription` and adds the number and
-    the shape of the layers. The fields cannot be assigned. ``metadata`` and ``extensions``
-    are mutable objects, and are copies of what was read.
+    the shape of the layers. The fields cannot be assigned. ``metadata`` is a mutable object, and a
+    copy of what was read.
 
     :param header: The axes of ``Record1``.
     :param revision: The revision of the standard that the file follows.
@@ -77,7 +90,8 @@ class FileInfo:
         profile and of a point cloud.
     :param storage: Whether the coordinates are stored as XML text or binary.
     :param metadata: ``Record2``, or ``None`` if the file has none.
-    :param extensions: The vendor specific extension files, as of a file that is read.
+    :param extensions: The vendor specific IDs and the files that they name, in file order. Their
+        content is not read.
     """
 
     header: Header
@@ -88,4 +102,14 @@ class FileInfo:
     shape: tuple[int, ...]
     storage: DataStorage
     metadata: Metadata | None
-    extensions: VendorExtensions
+    extensions: tuple[ExtensionFile, ...]
+
+    def __repr__(self) -> str:
+        """Show the feature type, the revision, the storage form and the layers, on one line."""
+        shape = " x ".join(str(size) for size in self.shape)
+        return (
+            f"<FileInfo {self.feature_type.name.lower()} {self.revision.value} "
+            f"{self.storage.name.lower()}, {self.layer_count} "
+            f"layer{'s' if self.layer_count != 1 else ''}, {shape}, "
+            f"{self.header.z.data_type.name.lower()}>"
+        )

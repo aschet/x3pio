@@ -23,8 +23,8 @@ from x3pio import (
     Surface,
     X3pFile,
     X3pFormatError,
-    validate_rotation,
 )
+from x3pio.model.geometry import validate_rotation
 
 OFFSET = (0.01, 0.02, 0.003)
 _C, _S = np.cos(0.3), np.sin(0.3)
@@ -328,9 +328,10 @@ def test_the_two_coordinate_systems_give_the_points_as_stored_and_as_placed() ->
         flat_points(x3p, coordinate_system=CoordinateSystem.GLOBAL), PLACEMENT.apply(view)
     )
     np.testing.assert_allclose(flat_points(x3p), PLACEMENT.apply(view))
-    assert [
-        point.z for point in x3p.layers[0].iter_points(coordinate_system=CoordinateSystem.VIEW)
-    ] == view[:, 2].tolist()
+    assert (
+        x3p.layers[0].points(coordinate_system=CoordinateSystem.VIEW)[..., 2].ravel().tolist()
+        == view[:, 2].tolist()
+    )
 
 
 def test_the_points_are_shaped_like_the_file() -> None:

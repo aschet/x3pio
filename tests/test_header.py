@@ -13,9 +13,9 @@ from x3pio import (
     DataType,
     Header,
     X3pFormatError,
-    validate_increment,
-    validate_rotation,
 )
+from x3pio.model.geometry import validate_rotation
+from x3pio.model.header import validate_increment
 
 
 def test_an_axis_is_described_by_enums() -> None:

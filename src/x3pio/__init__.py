@@ -29,30 +29,12 @@ from __future__ import annotations
 
 from ._version import __version__
 from .application import info, read, write, write_points
-from .codec import container as _container
 from .exceptions import X3pChecksumError, X3pError, X3pFormatError
-from .model.codec_port import register as _register_codec
-from .model.datatypes import (
-    DATA_TYPES,
-    DataType,
-    DataTypeInfo,
-    decode_raw,
-    encode_raw,
-    get_data_type,
-    suggest_scale,
-)
+from .model.base import X3pFile
+from .model.datatypes import DataType, suggest_scale
 from .model.extensions import VendorExtensions
-from .model.files import (
-    ArrayOptions,
-    MetadataChanges,
-    Point,
-    PointCloud,
-    PointOptions,
-    Profile,
-    Surface,
-    X3pFile,
-)
-from .model.geometry import CoordinateSystem, Placement, validate_rotation
+from .model.files import PointCloud, Profile, Surface
+from .model.geometry import CoordinateSystem, Placement
 from .model.header import (
     Axis,
     AxisType,
@@ -63,29 +45,25 @@ from .model.header import (
     ProbingSystem,
     ProbingType,
     Revision,
-    validate_increment,
 )
-from .model.info import FileDescription, FileInfo
+from .model.info import ExtensionFile, FileDescription, FileInfo
 from .model.layers import (
     Layer,
     PointLayer,
     ProfileLayer,
     SurfaceLayer,
 )
+from .model.options import ArrayOptions, MetadataChanges, PointOptions
 from .model.storage import DataStorage
 
-# The file types read and write through the codec that is registered here.
-_register_codec(_container)
-
 __all__ = [
-    "DATA_TYPES",
     "ArrayOptions",
     "Axis",
     "AxisType",
     "CoordinateSystem",
     "DataStorage",
     "DataType",
-    "DataTypeInfo",
+    "ExtensionFile",
     "FeatureType",
     "FileDescription",
     "FileInfo",
@@ -95,7 +73,6 @@ __all__ = [
     "Metadata",
     "MetadataChanges",
     "Placement",
-    "Point",
     "PointCloud",
     "PointLayer",
     "PointOptions",
@@ -112,14 +89,9 @@ __all__ = [
     "X3pFile",
     "X3pFormatError",
     "__version__",
-    "decode_raw",
-    "encode_raw",
-    "get_data_type",
     "info",
     "read",
     "suggest_scale",
-    "validate_increment",
-    "validate_rotation",
     "write",
     "write_points",
 ]

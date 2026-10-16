@@ -19,7 +19,7 @@ from .geometry import validate_rotation
 from .header import FeatureType, validate_increment
 
 if TYPE_CHECKING:
-    from .files import X3pFile
+    from .base import X3pFile
 
 __all__ = ["validate"]
 

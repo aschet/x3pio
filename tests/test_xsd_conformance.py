@@ -64,7 +64,7 @@ def _files() -> dict[str, X3pFile]:
         comment="A <comment> & more",
     )
     surface = array_file(np.array([[1.0, np.nan], [3.0, 4.0]]) * 1e-6, x_scale=1e-6, y_scale=2e-6)
-    absolute = Surface.from_stacked(
+    absolute = Surface._from_stacked(
         Header(
             x=Axis(AxisType.ABSOLUTE, DataType.INT16, 1e-6),
             y=Axis(AxisType.ABSOLUTE, DataType.FLOAT32, 1.0),

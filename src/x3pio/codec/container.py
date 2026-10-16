@@ -15,10 +15,11 @@ direction, and checks the checksums that the file states.
 
 from __future__ import annotations
 
+import io
 import math
 import os
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -26,7 +27,7 @@ from ..exceptions import X3pChecksumError, X3pFormatError
 from ..model.datatypes import DataTypeInfo, decode_raw, encode_raw, get_data_type
 from ..model.extensions import VendorExtensions, content_of
 from ..model.header import Axis, FeatureType, Revision
-from ..model.info import FileInfo
+from ..model.info import ExtensionFile, FileInfo
 from ..model.naming import (
     CHECKSUM_FILE,
     DATA_FILE,
@@ -51,13 +52,16 @@ from .archive import (
 from .xml import DataLink, Document, build_main, parse_datums, parse_main
 
 if TYPE_CHECKING:
-    from ..model.files import X3pFile
+    from ..model.base import X3pFile
 
 __all__ = ["describe", "parse", "records", "serialize"]
 
 
-def parse(data: bytes, *, verify: bool) -> dict[str, Any]:
+def parse(data: bytes | IO[bytes], *, verify: bool) -> dict[str, Any]:
     """Parse the content of an x3p file into the fields of an :class:`~x3pio.X3pFile`.
+
+    ``data`` is the content, or a seekable binary stream that holds it, from which only what is
+    needed is read.
 
     A set of known deviations from the standard is tolerated, see :mod:`x3pio.codec`.
 
@@ -219,6 +223,7 @@ def describe(source: PathOrStream, *, verify: bool) -> FileInfo:
     The directory of the container, ``main.xml`` and the vendor specific files are read. The
     binary files of the coordinates are not, so their sizes and checksums are not checked.
 
+    :raises io.UnsupportedOperation: If ``source`` is a stream that cannot seek.
     :raises X3pFormatError: If ``source`` is not an x3p file, or is damaged beyond what can
         be tolerated.
     :raises X3pChecksumError: If ``verify`` and the checksum of ``main.xml`` does not match.
@@ -226,7 +231,12 @@ def describe(source: PathOrStream, *, verify: bool) -> FileInfo:
     if isinstance(source, (str, os.PathLike)):
         with open(source, "rb") as stream:
             return _describe(Container(stream), verify)
-    return _describe(Container(source if source.seekable() else source.read()), verify)
+    if not source.seekable():
+        raise io.UnsupportedOperation(
+            "info needs a path or a stream that can seek, since a zip archive can only be read "
+            "selectively with seek; the data would have to be read whole"
+        )
+    return _describe(Container(source), verify)
 
 
 def _describe(container: Container, verify: bool) -> FileInfo:
@@ -248,7 +258,7 @@ def _describe(container: Container, verify: bool) -> FileInfo:
         shape=document.layer_shape,
         storage=DataStorage.XML if document.link is None else DataStorage.BINARY,
         metadata=document.metadata,
-        extensions=_read_extensions(container, document.vendor_ids, taken, document.revision),
+        extensions=_list_extensions(container, document.vendor_ids, taken, document.revision),
     )
 
 
@@ -258,6 +268,36 @@ def _format_files(document: Document) -> set[str]:
     if (name := _member_or_none(document.checksum_file)) is not None:
         taken.add(name)
     return taken
+
+
+def _list_extensions(
+    container: Container, ids: Sequence[str], taken: set[str], revision: Revision
+) -> tuple[ExtensionFile, ...]:
+    """List the vendor specific IDs and their files like :func:`_read_extensions`, unread."""
+    if not revision.has_vendor_ids:
+        if not ids:
+            return ()
+        names = [
+            name
+            for name in container.names
+            if name not in taken and local_member_path(name) == name
+        ]
+        if not names:
+            return (ExtensionFile(ids[0]),)
+        return tuple(ExtensionFile(ids[0], name, container.size(name)) for name in names)
+    listed = []
+    for uri in ids:
+        try:
+            member = vendor_extension_path(uri)
+        except X3pFormatError:
+            listed.append(ExtensionFile(uri))  # a URI without a path names no file
+            continue
+        name = member.replace("\\", "/")
+        if container.has(name) and name not in RESERVED_NAMES:
+            listed.append(ExtensionFile(uri, name, container.size(name)))
+        else:
+            listed.append(ExtensionFile(uri))
+    return tuple(listed)
 
 
 def _read_extensions(

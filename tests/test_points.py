@@ -21,7 +21,6 @@ from x3pio import (
     FeatureType,
     Header,
     Placement,
-    Point,
     PointCloud,
     Surface,
     X3pFile,
@@ -43,7 +42,7 @@ def _stack() -> Surface:
     # storage order.
     data = np.arange(18, dtype=float).reshape(2, 3, 3)
     header = Header(x=Axis(increment=1.0), y=Axis(increment=10.0))
-    return Surface.from_stacked(header, data)
+    return Surface._from_stacked(header, data)
 
 
 def test_points_come_in_storage_order() -> None:
@@ -57,13 +56,6 @@ def test_points_come_in_storage_order() -> None:
     assert points[9, :2].tolist() == [0.0, 0.0]
 
 
-def test_iter_points_matches_the_points_of_the_layers() -> None:
-    x3p = _stack()
-    points = [point for layer in x3p.layers for point in layer.iter_points()]
-    assert points[4] == Point(1.0, 10.0, 4.0)
-    assert np.array_equal(np.array(points), flat_points(x3p))
-
-
 def test_global_coordinates_apply_rotation_and_offset() -> None:
     header = Header(
         x=Axis(increment=2.0),
@@ -71,7 +63,7 @@ def test_global_coordinates_apply_rotation_and_offset() -> None:
         z=Axis(AxisType.ABSOLUTE, DataType.FLOAT64, 1.0),
     )
     placement = Placement(ROTATION, offset=[10.0, 20.0, 30.0])
-    x3p = Surface.from_stacked(header, np.array([[[5.0, 6.0]]]), placement=placement)
+    x3p = Surface._from_stacked(header, np.array([[[5.0, 6.0]]]), placement=placement)
     view = flat_points(x3p, coordinate_system=CoordinateSystem.VIEW)
     assert view.tolist() == [[0.0, 0.0, 5.0], [2.0, 0.0, 6.0]]
     # Q = R * P + T, with P the view coordinates (the formula of Amd 1:2020).
@@ -82,21 +74,21 @@ def test_global_coordinates_apply_rotation_and_offset() -> None:
 
 def test_offset_without_rotation() -> None:
     placement = Placement.translation(0.0, 0.0, -0.5)
-    surface = Surface.from_stacked(Header(), np.array([[[1.0]]]), placement=placement)
+    surface = Surface._from_stacked(Header(), np.array([[[1.0]]]), placement=placement)
     assert flat_points(surface).tolist() == [[0.0, 0.0, 0.5]]
 
 
 def test_identity_rotation_keeps_unmeasured_points_known() -> None:
     header = Header(x=Axis(increment=2.0))
     points = flat_points(
-        Surface.from_stacked(header, np.array([[[1.0, np.nan]]]), placement=Placement())
+        Surface._from_stacked(header, np.array([[[1.0, np.nan]]]), placement=Placement())
     )
     assert points[1].tolist()[:2] == [2.0, 0.0]
     assert np.isnan(points[1, 2])
 
 
 def test_rotation_makes_unmeasured_points_unknown() -> None:
-    surface = Surface.from_stacked(
+    surface = Surface._from_stacked(
         Header(), np.array([[[1.0, np.nan]]]), placement=Placement(ROTATION)
     )
     points = flat_points(surface)
@@ -104,10 +96,9 @@ def test_rotation_makes_unmeasured_points_unknown() -> None:
 
 
 def test_drop_invalid_removes_unmeasured_points() -> None:
-    x3p = Surface.from_stacked(Header(), np.array([[[1.0, np.nan, 3.0]]]))
+    x3p = Surface._from_stacked(Header(), np.array([[[1.0, np.nan, 3.0]]]))
     assert flat_points(x3p).shape == (3, 3)
     assert flat_points(x3p, drop_invalid=True).shape == (2, 3)
-    assert len(list(x3p.layers[0].iter_points(drop_invalid=True))) == 2
 
 
 @pytest.mark.parametrize("storage", list(DataStorage))
@@ -174,14 +165,14 @@ def test_point_cloud_cannot_hold_missing_points() -> None:
 def test_point_cloud_needs_absolute_axes_to_be_written() -> None:
     cloud = PointCloud.from_points(np.zeros((2, 3)))
     header = replace(cloud.header, x=Axis(AxisType.INCREMENTAL))
-    incremental = PointCloud.from_stacked(header, cloud.layer.z, y=cloud.layer.y)
+    incremental = PointCloud._from_stacked(header, cloud.layer.z, y=cloud.layer.y)
     with pytest.raises(X3pFormatError, match="must be absolute"):
         incremental.dumps()
 
 
 def test_list_with_an_incremental_axis_uses_the_index() -> None:
     header = Header(x=Axis(increment=0.5), y=Axis(AxisType.ABSOLUTE))
-    cloud = PointCloud.from_stacked(header, np.array([5.0, 6.0, 7.0]), y=np.array([1.0, 2.0, 3.0]))
+    cloud = PointCloud._from_stacked(header, np.array([5.0, 6.0, 7.0]), y=np.array([1.0, 2.0, 3.0]))
     assert flat_points(cloud).tolist() == [[0.0, 1.0, 5.0], [0.5, 2.0, 6.0], [1.0, 3.0, 7.0]]
 
 
@@ -189,7 +180,7 @@ def test_points_of_a_surface_with_absolute_axes() -> None:
     x = np.array([[[0.0, 1.0], [0.5, 1.5]]])
     y = np.array([[[0.0, 0.1], [1.0, 1.1]]])
     header = Header(x=Axis(AxisType.ABSOLUTE), y=Axis(AxisType.ABSOLUTE))
-    surface = Surface.from_stacked(header, np.arange(4.0).reshape(1, 2, 2), x=x, y=y)
+    surface = Surface._from_stacked(header, np.arange(4.0).reshape(1, 2, 2), x=x, y=y)
     assert flat_points(surface).tolist() == [
         [0.0, 0.0, 0.0],
         [1.0, 0.1, 1.0],
@@ -201,4 +192,15 @@ def test_points_of_a_surface_with_absolute_axes() -> None:
 def test_absolute_axis_without_coordinates_fails_to_give_points() -> None:
     header = Header(x=Axis(AxisType.ABSOLUTE))
     with pytest.raises(X3pFormatError, match="needs its coordinates"):
-        flat_points(Surface.from_stacked(header, np.zeros((1, 1, 1))))
+        flat_points(Surface._from_stacked(header, np.zeros((1, 1, 1))))
+
+
+def test_the_valid_mask_selects_the_measured_points_as_a_flat_array() -> None:
+    z = np.array([[0.0, 1.0, np.nan], [3.0, 4.0, 5.0]])
+    layer = x3pio.Surface.from_array(z, x_scale=1.0, y_scale=2.0).layers[0]
+
+    flat = layer.points()[layer.valid]
+
+    assert flat.shape == (5, 3)
+    assert np.isfinite(flat).all()
+    np.testing.assert_array_equal(flat, layer.points().reshape(-1, 3)[[0, 1, 3, 4, 5]])

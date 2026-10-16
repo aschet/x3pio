@@ -9,6 +9,7 @@ The types of the data are in ``x3pio.model``.
 
 from __future__ import annotations
 
+import os
 from typing import Unpack
 
 import numpy as np
@@ -16,16 +17,11 @@ from numpy.typing import ArrayLike
 
 from .codec import container
 from .exceptions import X3pFormatError
-from .model.files import (
-    ArrayOptions,
-    PointCloud,
-    PointOptions,
-    Profile,
-    Surface,
-    X3pFile,
-)
+from .model.base import X3pFile
+from .model.files import PointCloud, Profile, Surface, parse_file
 from .model.info import FileInfo
-from .model.streams import PathOrStream
+from .model.options import ArrayOptions, PointOptions
+from .model.streams import PathOrStream, read_bytes
 
 __all__ = ["info", "read", "write", "write_points"]
 
@@ -36,16 +32,22 @@ def read(path: PathOrStream, *, verify: bool = True) -> X3pFile:
     A set of known deviations from the standard is tolerated, see :mod:`x3pio.codec`; other
     deviations raise an error.
 
-    :param path: Path to an ``.x3p`` file, or an open binary file object.
-    :param verify: Check the MD5 checksums stored in the file, see :meth:`X3pFile.loads`.
+    :param path: Path to an ``.x3p`` file, or an open binary file object. The content of a file in
+        memory is read with :meth:`X3pFile.loads`.
+    :param verify: Check the MD5 checksums stored in the file, of ``main.xml`` and of the binary
+        files. A checksum that is missing or malformed is not checked.
     :returns: A :class:`Profile`, a :class:`Surface` or a :class:`PointCloud`, with the
         coordinates in metres (``NaN`` for points that are not measured), metadata and
         extension files.
-    :raises X3pFormatError: If the file is not an x3p file, or is damaged
-        beyond what can be tolerated.
-    :raises X3pChecksumError: If ``verify`` and a stored checksum does not match.
+    :raises X3pFormatError: If the file is not an x3p file, or is damaged beyond what can be
+        tolerated.
+    :raises X3pChecksumError: If ``verify`` and a stored checksum does not match, so the file was
+        changed or damaged after it was written.
     """
-    return X3pFile.open(path, verify=verify)
+    if isinstance(path, (str, os.PathLike)):
+        with open(path, "rb") as stream:  # the compressed content is not held in memory as a whole
+            return parse_file(stream, verify=verify)
+    return parse_file(read_bytes(path), verify=verify)
 
 
 def info(path: PathOrStream, *, verify: bool = True) -> FileInfo:
@@ -54,11 +56,13 @@ def info(path: PathOrStream, *, verify: bool = True) -> FileInfo:
     The zip directory, ``main.xml`` and the vendor specific files are read. The binary data and
     validity files are not, so damage to them is not detected.
 
-    :param path: Path to an ``.x3p`` file, or an open binary file object; a stream that can seek
-        is read only where needed.
+    :param path: Path to an ``.x3p`` file, or an open binary file object that can seek, from which
+        only the description is read.
     :param verify: Check the MD5 checksum of the description, ``main.xml``. The checksums of the
         data files are not checked, since the data is not read.
     :returns: The description as a :class:`FileInfo`.
+    :raises io.UnsupportedOperation: If ``path`` is a stream that cannot seek: the description of a
+        zip archive cannot be found without reading it whole.
     :raises X3pFormatError: If the file is not an x3p file, or is damaged
         beyond what can be tolerated.
     :raises X3pChecksumError: If ``verify`` and the checksum of ``main.xml`` does not match.

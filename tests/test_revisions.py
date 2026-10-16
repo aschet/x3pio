@@ -99,7 +99,6 @@ def test_only_amd_1_gives_every_file_an_id() -> None:
         ("  ISO25178-72:2017/DAM1\n", AMENDED),
         ("ISO5436 - 2000", BASE),
         ("ISO5436 \N{EN DASH} 2000", BASE),
-        ("something else", BASE),
         ("", BASE),
     ],
 )
@@ -107,8 +106,14 @@ def test_the_text_of_the_revision_gives_the_revision(text: str, revision: Revisi
     assert Revision.resolve(text) is revision
 
 
+@pytest.mark.parametrize("text", ["something else", "ISO25178-72:2017/DAM2", "ISO5436-2000", "x3p"])
+def test_a_text_that_is_no_known_revision_is_refused(text: str) -> None:
+    with pytest.raises(X3pFormatError, match="Unknown revision"):
+        Revision.resolve(text)
+
+
 def test_new_files_follow_amd_1() -> None:
-    assert Surface.from_stacked(Header(), np.zeros((1, 1, 2))).revision is AMENDED
+    assert Surface._from_stacked(Header(), np.zeros((1, 1, 2))).revision is AMENDED
     assert array_file(np.zeros(2), x_scale=1.0).revision is AMENDED
     assert PointCloud.from_points(np.zeros((2, 3))).revision is AMENDED
     assert x3pio.read(io.BytesIO(build())).revision is AMENDED
@@ -142,9 +147,11 @@ def test_a_file_has_the_extensions_of_its_revision() -> None:
 
 
 def test_empty_extensions_of_another_revision_take_the_revision_of_the_file() -> None:
-    base = Surface.from_stacked(Header(), np.zeros((1, 1, 2)), revision=BASE)
+    base = Surface._from_stacked(Header(), np.zeros((1, 1, 2)), revision=BASE)
     assert base.extensions._revision is BASE
-    amended = Surface.from_stacked(Header(), np.zeros((1, 1, 2)), extensions=VendorExtensions(BASE))
+    amended = Surface._from_stacked(
+        Header(), np.zeros((1, 1, 2)), extensions=VendorExtensions(BASE)
+    )
     assert amended.extensions._revision is AMENDED
 
 
@@ -163,7 +170,7 @@ def test_the_revision_belongs_to_the_file_and_not_to_its_layers() -> None:
 def test_extensions_of_another_revision_are_not_written() -> None:
     x3p = _file(AMENDED)
     x3p.extensions["http://www.vendor.com/a.xml"] = b"<a/>"
-    x3p = Surface.from_stacked(x3p.header, stacked(x3p), revision=BASE, extensions=x3p.extensions)
+    x3p = Surface._from_stacked(x3p.header, stacked(x3p), revision=BASE, extensions=x3p.extensions)
     with pytest.raises(X3pFormatError, match="with_revision"):
         x3p.dumps()
 
@@ -262,15 +269,12 @@ def test_a_file_with_one_id_that_names_a_file_of_amd_1_is_read_by_its_revision()
     assert dict(x3p.extensions) == {uri: b"<a/>"}
 
 
-def test_a_revision_that_is_not_known_is_the_iso_25178_72_2017() -> None:
+def test_a_file_of_a_revision_that_is_not_known_is_refused() -> None:
     blob = edit_main(
         _with_id(build(), VENDOR), lambda text: text.replace("ISO25178-72:2017/DAM1", "future")
     )
-    members = unzip(blob)
-    members["a.dat"] = b"1"
-    x3p = X3pFile.loads(rezip(members))
-    assert x3p.revision is BASE
-    assert dict(x3p.extensions) == _keys({"a.dat": b"1"})
+    with pytest.raises(X3pFormatError, match="Unknown revision 'future'"):
+        X3pFile.loads(blob)
 
 
 def test_a_damaged_file_is_reported_when_it_is_asked_for() -> None:
@@ -702,6 +706,27 @@ def test_the_extensions_can_be_dropped_instead() -> None:
     assert len(converted.extensions) == 0
     assert _ids(converted) == []
     assert len(x3p.extensions) == 3  # this file is as it was
+
+
+def test_extensions_fit_where_with_revision_keeps_them() -> None:
+    amended = _amended_with(AMENDED_IDS)
+    assert amended.extensions_fit(AMENDED)
+    assert not amended.extensions_fit(BASE)
+    assert _read_base([VENDOR], FILES).extensions_fit(AMENDED)
+    assert _read_base([VENDOR], FILES).extensions_fit(BASE)
+    assert not _amended_with({VENDOR_URL: None}).extensions_fit(BASE)
+    assert _file(AMENDED).extensions_fit(BASE)  # there is nothing to keep
+
+
+def test_extensions_fit_agrees_with_with_revision() -> None:
+    for x3p in (_amended_with(AMENDED_IDS), _read_base([VENDOR], FILES), _file(AMENDED)):
+        for revision in (BASE, AMENDED):
+            try:
+                x3p.with_revision(revision)
+            except X3pFormatError:
+                assert not x3p.extensions_fit(revision)
+            else:
+                assert x3p.extensions_fit(revision)
 
 
 def test_converting_to_amd_1_needs_no_further_information() -> None:

@@ -21,8 +21,8 @@ or ``from_points`` and give it to a file with ``X3pFile.with_layers``.
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, NamedTuple, Self, TypeVar
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
 import numpy as np
 
@@ -34,13 +34,12 @@ from .header import Header
 if TYPE_CHECKING:
     from typing import Unpack
 
-    from numpy.typing import ArrayLike
+    from numpy.typing import ArrayLike, NDArray
 
-    from .files import ArrayOptions, PointOptions
+    from .options import ArrayOptions, PointOptions
 
 __all__ = [
     "Layer",
-    "Point",
     "PointLayer",
     "ProfileLayer",
     "SurfaceLayer",
@@ -48,14 +47,6 @@ __all__ = [
 
 
 _LayerT = TypeVar("_LayerT", bound="Layer")
-
-
-class Point(NamedTuple):
-    """One 3-D point; ``NaN`` for a coordinate that is not measured."""
-
-    x: float
-    y: float
-    z: float
 
 
 class Layer:
@@ -66,9 +57,13 @@ class Layer:
     Two layers are equal if they are of the same kind and have equal axes, placement and values,
     ``NaN`` equal to ``NaN``. Since the values can change, a layer is not hashable.
 
+    The arrays are held as ``float64``. An array of that type is kept as it is, so that writing to
+    the layer writes to it; an array of another type is converted, which makes a copy.
+
     :param z: The heights, shaped like the layer; ``NaN`` for a point that is not measured.
     :param x: The x coordinates if the x axis is absolute, otherwise ``None``.
     :param y: The y coordinates if the y axis is absolute, otherwise ``None``.
+
     :param header: The axes of the file, with their increments.
     :param placement: Where the view coordinate system lies in the global one; the identity by
         default.
@@ -76,17 +71,17 @@ class Layer:
 
     def __init__(
         self,
-        z: np.ndarray,
-        x: np.ndarray | None = None,
-        y: np.ndarray | None = None,
+        z: ArrayLike,
+        x: ArrayLike | None = None,
+        y: ArrayLike | None = None,
         *,
         header: Header,
         placement: Placement | None = None,
     ) -> None:
-        """Make a layer of arrays, which it keeps as they are."""
-        self._z = z
-        self._x = x
-        self._y = y
+        """Make a layer of arrays, which it holds as ``float64``."""
+        self._z = np.asarray(z, dtype=np.float64)
+        self._x = None if x is None else np.asarray(x, dtype=np.float64)
+        self._y = None if y is None else np.asarray(y, dtype=np.float64)
         self._header = header
         self._placement = Placement.identity() if placement is None else placement
 
@@ -101,7 +96,7 @@ class Layer:
         return self._placement
 
     @property
-    def z(self) -> np.ndarray:
+    def z(self) -> NDArray[np.float64]:
         """The heights in the stored shape; ``NaN`` for a point that is not measured.
 
         The array can be written to: ``layer.z[0, 1] = 1.0``, ``layer.z -= 1.0`` and
@@ -119,7 +114,7 @@ class Layer:
         _fill(self._z, value, "z")
 
     @property
-    def x(self) -> np.ndarray | None:
+    def x(self) -> NDArray[np.float64] | None:
         """The stored x coordinates in metres if the x axis is absolute, otherwise ``None``.
 
         With an incremental axis the coordinates follow from the place of a point, see
@@ -135,7 +130,7 @@ class Layer:
         _fill(_stored(self._x, "x"), value, "x")
 
     @property
-    def y(self) -> np.ndarray | None:
+    def y(self) -> NDArray[np.float64] | None:
         """The stored y coordinates in metres if the y axis is absolute, otherwise ``None``.
 
         See :attr:`x`.
@@ -162,11 +157,10 @@ class Layer:
     __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
-        """Show the arrays, the axes and the placement."""
-        return (
-            f"{type(self).__name__}(z={self.z!r}, x={self.x!r}, y={self.y!r}, "
-            f"header={self.header!r}, placement={self.placement!r})"
-        )
+        """Show the type and the shape, and whether the points lie on a regular grid."""
+        shape = " x ".join(str(size) for size in self.shape)
+        grid = ", regular grid" if self.is_regular_grid else ""
+        return f"<{type(self).__name__} {shape}{grid}>"
 
     def _derived(
         self,
@@ -204,7 +198,7 @@ class Layer:
         return tuple(self.z.shape)
 
     @property
-    def valid(self) -> np.ndarray:
+    def valid(self) -> NDArray[np.bool_]:
         """Boolean mask of the points that are measured."""
         return ~np.isnan(self.z)
 
@@ -220,7 +214,7 @@ class Layer:
 
     def points(
         self, *, coordinate_system: CoordinateSystem = CoordinateSystem.GLOBAL
-    ) -> np.ndarray:
+    ) -> NDArray[np.float64]:
         """Return the points as an array of ``x``, ``y``, ``z`` in metres, shaped like the layer.
 
         The shape is ``z.shape + (3,)``: ``(rows, columns, 3)`` for a surface layer,
@@ -228,31 +222,27 @@ class Layer:
         has ``NaN`` in ``z``, and in ``x`` and ``y`` too if the placement turns the points, since
         the rotation couples them. The ``from_points`` constructors take this shape.
 
+        The array is made for this layer alone and is a new one, three times the size of ``z``.
+        ``points[layer.valid]`` gives the ``(N, 3)`` array of the measured points that point cloud
+        libraries take, and ``reshape(-1, 3)`` all of them.
+
         :param coordinate_system: :attr:`CoordinateSystem.GLOBAL`, with the placement applied,
             which is the default, or :attr:`CoordinateSystem.VIEW`, as stored.
+
+        >>> import numpy as np
+        >>> import x3pio
+        >>> layer = x3pio.Surface.from_array(
+        ...     np.array([[0.0, 1.0], [np.nan, 3.0]]), x_scale=1.0, y_scale=1.0
+        ... ).layers[0]
+        >>> layer.points().shape
+        (2, 2, 3)
+        >>> layer.points()[layer.valid].shape
+        (3, 3)
         """
         view = view_points(self.header, *self._cube())
         if coordinate_system is CoordinateSystem.GLOBAL:
             view = self.placement.apply(view)
         return view.reshape(*self.z.shape, 3)
-
-    def iter_points(
-        self,
-        *,
-        coordinate_system: CoordinateSystem = CoordinateSystem.GLOBAL,
-        drop_invalid: bool = False,
-    ) -> Iterator[Point]:
-        """Iterate over the points of :meth:`points` in storage order.
-
-        :param coordinate_system: See :meth:`points`.
-        :param drop_invalid: Leave out the points that are not measured.
-        :returns: The points as :class:`Point` tuples.
-        """
-        points = self.points(coordinate_system=coordinate_system).reshape(-1, 3)
-        if drop_invalid:
-            points = points[np.isfinite(points).all(axis=1)]
-        for x, y, z in points.tolist():
-            yield Point(x, y, z)
 
 
 class ProfileLayer(Layer):
@@ -269,14 +259,14 @@ class ProfileLayer(Layer):
         return cube(self.z), cube(self.x), cube(self.y)  # type: ignore[return-value]
 
     @property
-    def x_values(self) -> np.ndarray:
+    def x_values(self) -> NDArray[np.float64]:
         """X coordinates of the points in metres: ``x_u = (u - 1) * increment``.
 
         :raises ValueError: If the x axis is absolute.
         """
         if not self.header.x.is_incremental:
             raise ValueError("x_values needs an incremental x axis")
-        return np.arange(self.z.shape[-1]) * self.header.x.increment
+        return np.arange(self.z.shape[-1], dtype=np.float64) * self.header.x.increment
 
     @property
     def spacing(self) -> float:
@@ -346,17 +336,17 @@ class SurfaceLayer(Layer):
         )
 
     @property
-    def x_values(self) -> np.ndarray:
+    def x_values(self) -> NDArray[np.float64]:
         """X coordinates of the columns in metres: ``x_u = (u - 1) * increment``.
 
         :raises ValueError: If the x axis is absolute.
         """
         if not self.header.x.is_incremental:
             raise ValueError("x_values needs an incremental x axis")
-        return np.arange(self.z.shape[-1]) * self.header.x.increment
+        return np.arange(self.z.shape[-1], dtype=np.float64) * self.header.x.increment
 
     @property
-    def y_values(self) -> np.ndarray:
+    def y_values(self) -> NDArray[np.float64]:
         """Y coordinates of the rows in metres: ``y_v = (v - 1) * increment``.
 
         ``y`` increases with the row index.
@@ -365,7 +355,7 @@ class SurfaceLayer(Layer):
         """
         if not self.header.y.is_incremental:
             raise ValueError("y_values needs an incremental y axis")
-        return np.arange(self.z.shape[-2]) * self.header.y.increment
+        return np.arange(self.z.shape[-2], dtype=np.float64) * self.header.y.increment
 
     @property
     def spacing(self) -> tuple[float, float]:

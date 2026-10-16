@@ -12,7 +12,7 @@ import pytest
 
 import x3pio
 from helpers import build, edit_main, replace, rezip, stacked, sub, unzip
-from x3pio import DataStorage, DataType, X3pChecksumError, X3pFile, X3pFormatError
+from x3pio import DataStorage, DataType, X3pChecksumError, X3pFile, X3pFormatError, read
 from x3pio.codec.archive import format_checksum_file, md5_hex
 
 
@@ -70,9 +70,9 @@ def test_read_and_open_verify_too(tmp_path: pytest.TempPathFactory) -> None:
     with pytest.raises(X3pChecksumError):
         x3pio.read(io.BytesIO(blob))
     with pytest.raises(X3pChecksumError):
-        X3pFile.open(io.BytesIO(blob))
+        read(io.BytesIO(blob))
     assert stacked(x3pio.read(io.BytesIO(blob), verify=False)).shape == (1, 2, 3)
-    assert stacked(X3pFile.open(io.BytesIO(blob), verify=False)).shape == (1, 2, 3)
+    assert stacked(read(io.BytesIO(blob), verify=False)).shape == (1, 2, 3)
 
 
 def test_a_missing_checksum_file_leaves_nothing_to_check() -> None:

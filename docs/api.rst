@@ -15,6 +15,7 @@ Reading and Writing
 .. autofunction:: x3pio.info
 .. autoclass:: x3pio.FileDescription
 .. autoclass:: x3pio.FileInfo
+.. autoclass:: x3pio.ExtensionFile
 .. autofunction:: x3pio.write
 .. autofunction:: x3pio.write_points
 
@@ -53,7 +54,6 @@ Layers
 .. autoclass:: x3pio.PointLayer
    :members:
    :inherited-members:
-.. autoclass:: x3pio.Point
 
 Coordinates
 -----------
@@ -65,7 +65,6 @@ Coordinates
    :members:
 .. autoclass:: x3pio.Placement
    :members:
-.. autofunction:: x3pio.validate_rotation
 
 Header and Metadata
 -------------------
@@ -84,7 +83,6 @@ Header and Metadata
 .. autoclass:: x3pio.Instrument
 .. autoclass:: x3pio.ProbingSystem
 .. autoclass:: x3pio.ProbingType
-.. autofunction:: x3pio.validate_increment
 
 Data Types and Storage
 ----------------------
@@ -93,16 +91,7 @@ Data Types and Storage
    :no-members:
 
 .. autoclass:: x3pio.DataType
-.. autoclass:: x3pio.DataTypeInfo
-   :members:
-.. py:data:: x3pio.DATA_TYPES
-
-   The :class:`DataTypeInfo` of each :class:`DataType`.
-
-.. autofunction:: x3pio.get_data_type
 .. autofunction:: x3pio.suggest_scale
-.. autofunction:: x3pio.encode_raw
-.. autofunction:: x3pio.decode_raw
 .. autoclass:: x3pio.DataStorage
 
 Vendor Extensions
