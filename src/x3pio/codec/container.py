@@ -51,7 +51,7 @@ from .archive import (
 from .xml import DataLink, Document, build_main, parse_datums, parse_main
 
 if TYPE_CHECKING:
-    from ..model.files import X3pFile
+    from ..model.base import X3pFile
 
 __all__ = ["describe", "parse", "records", "serialize"]
 

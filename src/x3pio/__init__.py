@@ -30,18 +30,10 @@ from __future__ import annotations
 from ._version import __version__
 from .application import info, read, write, write_points
 from .exceptions import X3pChecksumError, X3pError, X3pFormatError
+from .model.base import X3pFile
 from .model.datatypes import DataType, suggest_scale
 from .model.extensions import VendorExtensions
-from .model.files import (
-    ArrayOptions,
-    MetadataChanges,
-    Point,
-    PointCloud,
-    PointOptions,
-    Profile,
-    Surface,
-    X3pFile,
-)
+from .model.files import PointCloud, Profile, Surface
 from .model.geometry import CoordinateSystem, Placement
 from .model.header import (
     Axis,
@@ -57,10 +49,12 @@ from .model.header import (
 from .model.info import FileDescription, FileInfo
 from .model.layers import (
     Layer,
+    Point,
     PointLayer,
     ProfileLayer,
     SurfaceLayer,
 )
+from .model.options import ArrayOptions, MetadataChanges, PointOptions
 from .model.storage import DataStorage
 
 __all__ = [

@@ -16,16 +16,10 @@ from numpy.typing import ArrayLike
 
 from .codec import container
 from .exceptions import X3pFormatError
-from .model.files import (
-    ArrayOptions,
-    PointCloud,
-    PointOptions,
-    Profile,
-    Surface,
-    X3pFile,
-    parse_file,
-)
+from .model.base import X3pFile
+from .model.files import PointCloud, Profile, Surface, parse_file
 from .model.info import FileInfo
+from .model.options import ArrayOptions, PointOptions
 from .model.streams import PathOrStream, read_bytes
 
 __all__ = ["info", "read", "write", "write_points"]

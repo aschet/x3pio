@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import ArrayLike, NDArray
 
-    from .files import ArrayOptions, PointOptions
+    from .options import ArrayOptions, PointOptions
 
 __all__ = [
     "Layer",
