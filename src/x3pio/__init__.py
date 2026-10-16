@@ -29,9 +29,7 @@ from __future__ import annotations
 
 from ._version import __version__
 from .application import info, read, write, write_points
-from .codec import container as _container
 from .exceptions import X3pChecksumError, X3pError, X3pFormatError
-from .model.codec_port import register as _register_codec
 from .model.datatypes import DataType, suggest_scale
 from .model.extensions import VendorExtensions
 from .model.files import (
@@ -64,9 +62,6 @@ from .model.layers import (
     SurfaceLayer,
 )
 from .model.storage import DataStorage
-
-# The file types read and write through the codec that is registered here.
-_register_codec(_container)
 
 __all__ = [
     "ArrayOptions",

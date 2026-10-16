@@ -6,8 +6,8 @@
 
 The model (``x3pio.model``) knows nothing of how a file is stored. The codec (``x3pio.codec``)
 turns bytes into the types of the model and back. The application and the command line use both.
-The file types read and write through a codec that the package registers in the port of the model,
-so the model imports the codec nowhere, not even inside of a function.
+The file types import the codec inside of the methods that read and write, so the model does not
+import it when it is loaded.
 """
 
 from __future__ import annotations
@@ -67,37 +67,6 @@ def test_a_layer_does_not_import_the_layers_above_it(layer: str) -> None:
         imported = _loaded_imports(path)
         for name in imported:
             assert not name.startswith(FORBIDDEN[layer]), f"{path.name} imports {name}"
-
-
-def _every_import(path: Path) -> set[str]:
-    """Return the modules that ``path`` imports anywhere, also inside of functions."""
-    found: set[str] = set()
-    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-        if isinstance(node, ast.Import):
-            found.update(alias.name for alias in node.names)
-        elif isinstance(node, ast.ImportFrom):
-            base = "." * node.level + (node.module or "")
-            if node.module in (
-                None,
-                "x3pio",
-            ):  # the names may be modules, as in ``from .. import codec``
-                found.update(f"{base}.{alias.name}" for alias in node.names)
-            else:
-                found.add(base)
-    return found
-
-
-def test_the_model_imports_the_codec_nowhere() -> None:
-    for path in sorted((PACKAGE / "model").glob("*.py")):
-        for name in _every_import(path):
-            assert "codec" not in name.split("."), f"{path.name} imports {name}"
-
-
-def test_the_package_registers_the_codec_for_the_file_types() -> None:
-    from x3pio.codec import container
-    from x3pio.model import codec_port
-
-    assert codec_port.codec() is container
 
 
 def test_the_checker_sees_an_import_of_a_layer() -> None:

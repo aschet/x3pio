@@ -57,7 +57,6 @@ from numpy.typing import ArrayLike, NDArray
 from .._version import __version__
 from ..exceptions import X3pFormatError
 from .arithmetic import centered, globalize, rescaled, resolve_coordinate_system
-from .codec_port import codec
 from .datatypes import (
     DataType,
     get_data_type,
@@ -823,7 +822,9 @@ class X3pFile(ABC):
         validate(self)
 
     def _records(self) -> np.ndarray:
-        return codec().records(self)
+        from ..codec import container  # imported here: the codec imports this module
+
+        return container.records(self)
 
     def raw_data(self) -> NDArray[Any]:
         """Coded coordinates in the file's native on-disk layout.
@@ -857,7 +858,9 @@ class X3pFile(ABC):
         """
         if storage is not None and not isinstance(storage, DataStorage):
             raise TypeError(f"storage must be a DataStorage member, got {storage!r}")
-        return codec().serialize(self, storage)
+        from ..codec import container  # imported here: the codec imports this module
+
+        return container.serialize(self, storage)
 
     def save(self, path: PathOrStream, *, storage: DataStorage | None = None) -> None:
         """Write this file to disk or a binary stream, optionally overriding the storage form.
@@ -1469,7 +1472,9 @@ def parse_file(data: bytes, *, verify: bool = True) -> X3pFile:
     :raises X3pChecksumError: If ``verify`` and a stored checksum does not match the content, so
         the file was changed or damaged after it was written.
     """
-    return _from_parsed(codec().parse(data, verify=verify))
+    from ..codec import container  # imported here: the codec imports this module
+
+    return _from_parsed(container.parse(data, verify=verify))
 
 
 def _from_parsed(fields: dict[str, Any]) -> X3pFile:
