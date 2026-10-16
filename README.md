@@ -42,6 +42,7 @@ print(x3p.layers[0].z.shape)                # (480, 640), the heights in metres
 print(x3p.layers[0].points().shape)         # (480, 640, 3), x, y and z in metres
 print(x3p.metadata.instrument.model)        # Scanner 3000
 ```
+
 ## Documentation
 
 - [x3p Format](https://aschet.github.io/x3pio/format.html): what an x3p file contains.
