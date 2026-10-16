@@ -99,12 +99,17 @@ def test_only_amd_1_gives_every_file_an_id() -> None:
         ("  ISO25178-72:2017/DAM1\n", AMENDED),
         ("ISO5436 - 2000", BASE),
         ("ISO5436 \N{EN DASH} 2000", BASE),
-        ("something else", BASE),
         ("", BASE),
     ],
 )
 def test_the_text_of_the_revision_gives_the_revision(text: str, revision: Revision) -> None:
     assert Revision.resolve(text) is revision
+
+
+@pytest.mark.parametrize("text", ["something else", "ISO25178-72:2017/DAM2", "ISO5436-2000", "x3p"])
+def test_a_text_that_is_no_known_revision_is_refused(text: str) -> None:
+    with pytest.raises(X3pFormatError, match="Unknown revision"):
+        Revision.resolve(text)
 
 
 def test_new_files_follow_amd_1() -> None:
@@ -264,15 +269,12 @@ def test_a_file_with_one_id_that_names_a_file_of_amd_1_is_read_by_its_revision()
     assert dict(x3p.extensions) == {uri: b"<a/>"}
 
 
-def test_a_revision_that_is_not_known_is_the_iso_25178_72_2017() -> None:
+def test_a_file_of_a_revision_that_is_not_known_is_refused() -> None:
     blob = edit_main(
         _with_id(build(), VENDOR), lambda text: text.replace("ISO25178-72:2017/DAM1", "future")
     )
-    members = unzip(blob)
-    members["a.dat"] = b"1"
-    x3p = X3pFile.loads(rezip(members))
-    assert x3p.revision is BASE
-    assert dict(x3p.extensions) == _keys({"a.dat": b"1"})
+    with pytest.raises(X3pFormatError, match="Unknown revision 'future'"):
+        X3pFile.loads(blob)
 
 
 def test_a_damaged_file_is_reported_when_it_is_asked_for() -> None:

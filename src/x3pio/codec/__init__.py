@@ -34,8 +34,8 @@ Axes:
 
 Document structure:
 
-- A ``Revision`` text other than that of Amd 1:2020 is read as ISO 25178-72:2017, see
-  :class:`~x3pio.Revision`.
+- A missing or empty ``Revision`` is read as ISO 25178-72:2017, and the en dash and other dashes
+  in the text of a revision are read as the hyphen, see :class:`~x3pio.Revision`.
 - A root element outside of the namespace of the schema is accepted.
 - A missing ``Record4``, ``Instrument`` or ``ProbingSystem``, or a missing element of the
   instrument, is empty.
@@ -63,8 +63,8 @@ Container:
   is kept as written, whether it names a file or not.
 
 Some problems cannot be corrected and always raise :class:`~x3pio.X3pFormatError`: an incremental
-z axis, a zero increment, an unknown feature, axis or data type, data that does not fit the
-dimensions, a point cloud with an incremental axis, a missing ``main.xml``, ``Record1`` or
+z axis, a zero increment, an unknown revision, feature, axis or data type, data that does not fit
+the dimensions, a point cloud with an incremental axis, a missing ``main.xml``, ``Record1`` or
 ``Record3``, links that leave the container (absolute paths, ``..``, URLs), and anything that is
 not XML.
 """

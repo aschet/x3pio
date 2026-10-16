@@ -60,9 +60,11 @@ class Revision(StrEnum):
     ``X3pFile.revision`` is the revision of a file. A file is written in the revision it was read
     in, and a new file follows Amd 1:2020 unless ``revision=`` says otherwise.
 
-    - Reading: a ``Revision`` with the text of Amd 1:2020 means ``ISO25178_72_2017_DAM1``. Any
-      other text, or none, means ``ISO5436_2000``. A file with several ``VendorSpecificID`` is
-      read as Amd 1:2020, since only Amd 1:2020 allows that.
+    - Reading: a ``Revision`` with the text of Amd 1:2020 means ``ISO25178_72_2017_DAM1`` and one
+      with the text of ISO 25178-72:2017 means ``ISO5436_2000``. A missing or empty ``Revision``
+      means ``ISO5436_2000`` too. Any other text raises :class:`~x3pio.X3pFormatError`, since a
+      revision that is not known may store its data differently. A file with several
+      ``VendorSpecificID`` is read as Amd 1:2020, since only Amd 1:2020 allows that.
     - Writing: the revision is written as the ``Revision`` element and decides how vendor
       extensions are written. Axes always have ``DataType``, ``Increment`` and ``Offset``, which
       both schemas accept.
@@ -89,12 +91,23 @@ class Revision(StrEnum):
     def resolve(cls, revision: str) -> Revision:
         """Return the revision of the text of a ``Revision`` element.
 
-        The text of Amd 1:2020 gives ``ISO25178_72_2017_DAM1``, also with another dash than the
-        hyphen, such as the en dash that some software writes. Any other text, such as the
-        ``ISO5436 - 2000`` of ISO 25178-72:2017 or a variation of it, gives ``ISO5436_2000``.
+        The text of Amd 1:2020 gives ``ISO25178_72_2017_DAM1`` and the ``ISO5436 - 2000`` of
+        ISO 25178-72:2017 gives ``ISO5436_2000``, each also with another dash than the hyphen,
+        such as the en dash that some software writes. An empty text, as of a missing element,
+        gives ``ISO5436_2000``.
+
+        :raises X3pFormatError: If the text is none of these.
         """
         text = revision.strip().translate(_DASHES)
-        return cls.ISO25178_72_2017_DAM1 if text == cls.ISO25178_72_2017_DAM1 else cls.ISO5436_2000
+        if not text:
+            return cls.ISO5436_2000
+        for known in cls:
+            if text == known.value:
+                return known
+        raise X3pFormatError(
+            f"Unknown revision {revision.strip()!r}; x3pio reads "
+            + " and ".join(repr(known.value) for known in cls)
+        )
 
     @property
     def has_vendor_ids(self) -> bool:
