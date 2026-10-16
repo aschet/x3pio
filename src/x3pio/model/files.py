@@ -783,6 +783,30 @@ class X3pFile(ABC):
             metadata.calibration_date = metadata.date  # the schema of the revision requires one
         return self._copy(revision=revision, extensions=extensions, metadata=metadata)
 
+    def extensions_fit(self, revision: Revision) -> bool:
+        """Return whether the vendor extensions are kept by :meth:`with_revision`.
+
+        That is the case without extensions, in the revision the file already follows, and in
+        ``revision`` if the extensions can be converted to it. They cannot be converted to
+        ``ISO5436_2000``, where ``with_revision`` fails for them unless it drops them.
+
+        >>> import numpy as np
+        >>> import x3pio
+        >>> file = x3pio.Surface.from_array(np.zeros((1, 2)), x_scale=1.0, y_scale=1.0)
+        >>> file.extensions_fit(x3pio.Revision.ISO5436_2000)
+        True
+        >>> file.extensions["http://vendor.example/a.xml"] = b"<a/>"
+        >>> file.extensions_fit(x3pio.Revision.ISO5436_2000)
+        False
+        """
+        if revision is self.revision:
+            return True
+        try:
+            convert_extensions(self.extensions, revision)
+        except X3pFormatError:
+            return False
+        return True
+
     @classmethod
     def loads(cls, data: bytes, *, verify: bool = True) -> Self:
         """Parse an in-memory x3p file.

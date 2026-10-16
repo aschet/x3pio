@@ -704,6 +704,27 @@ def test_the_extensions_can_be_dropped_instead() -> None:
     assert len(x3p.extensions) == 3  # this file is as it was
 
 
+def test_extensions_fit_where_with_revision_keeps_them() -> None:
+    amended = _amended_with(AMENDED_IDS)
+    assert amended.extensions_fit(AMENDED)
+    assert not amended.extensions_fit(BASE)
+    assert _read_base([VENDOR], FILES).extensions_fit(AMENDED)
+    assert _read_base([VENDOR], FILES).extensions_fit(BASE)
+    assert not _amended_with({VENDOR_URL: None}).extensions_fit(BASE)
+    assert _file(AMENDED).extensions_fit(BASE)  # there is nothing to keep
+
+
+def test_extensions_fit_agrees_with_with_revision() -> None:
+    for x3p in (_amended_with(AMENDED_IDS), _read_base([VENDOR], FILES), _file(AMENDED)):
+        for revision in (BASE, AMENDED):
+            try:
+                x3p.with_revision(revision)
+            except X3pFormatError:
+                assert not x3p.extensions_fit(revision)
+            else:
+                assert x3p.extensions_fit(revision)
+
+
 def test_converting_to_amd_1_needs_no_further_information() -> None:
     x3p = _read_base([VENDOR], FILES)
     assert dict(x3p.with_revision(AMENDED).extensions) == _keys(FILES)
