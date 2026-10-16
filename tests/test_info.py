@@ -17,6 +17,7 @@ import x3pio
 from helpers import build, rezip, unzip
 from x3pio import (
     DataStorage,
+    ExtensionFile,
     FeatureType,
     FileDescription,
     FileInfo,
@@ -60,7 +61,7 @@ def test_the_summary_says_what_the_file_says() -> None:
     assert summary.placement == surface.placement
     assert summary.metadata == surface.metadata
     assert summary.storage is DataStorage.BINARY
-    assert summary.extensions == surface.extensions
+    assert summary.extensions == ()
 
 
 def test_the_summary_is_that_of_the_file_that_is_read() -> None:
@@ -95,7 +96,10 @@ def test_the_extensions_are_listed_for_both_revisions(revision: Revision) -> Non
     surface = _surface(revision=revision)
     surface.extensions.add("http://a.b", "c.bin", b"1")
     summary = x3pio.info(io.BytesIO(_blob(surface)))
-    assert summary.extensions == surface.extensions
+    if revision.has_vendor_ids:
+        assert summary.extensions == (ExtensionFile("http://a.b/c.bin", "a/b/c.bin", 1),)
+    else:
+        assert summary.extensions == (ExtensionFile("http://a.b", "c.bin", 1),)
     assert summary.revision is revision
 
 
@@ -180,7 +184,7 @@ def test_info_agrees_with_read_on_the_sample_files(path: Path) -> None:
     assert summary.placement == file.placement
     assert summary.storage is file.storage
     assert summary.metadata == file.metadata
-    assert summary.extensions == file.extensions
+    assert len(summary.extensions) == len(file.extensions)
     assert summary.layer_count == len(file.layers)
     assert summary.shape == file.layers[0].shape
 
@@ -193,3 +197,23 @@ def test_a_file_and_its_info_are_both_descriptions(path: Path) -> None:
     file: FileDescription = x3pio.read(path)
     assert cli._head_fields(file) == cli._head_fields(summary)
     assert cli._tail_fields(file) == cli._tail_fields(summary)
+
+
+def test_the_vendor_files_are_not_read() -> None:
+    surface = _surface()
+    surface.extensions.add("http://a.b", "big.bin", np.random.default_rng(0).bytes(2_000_000))
+    blob = _blob(surface)
+
+    class Counting(io.BytesIO):
+        read_bytes = 0
+
+        def read(self, size: int | None = -1) -> bytes:
+            data = super().read(size)
+            self.read_bytes += len(data)
+            return data
+
+    stream = Counting(blob)
+    summary = x3pio.info(stream)
+
+    assert summary.extensions[0].size == 2_000_000
+    assert stream.read_bytes < 100_000 < len(blob)

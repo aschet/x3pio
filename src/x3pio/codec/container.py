@@ -27,7 +27,7 @@ from ..exceptions import X3pChecksumError, X3pFormatError
 from ..model.datatypes import DataTypeInfo, decode_raw, encode_raw, get_data_type
 from ..model.extensions import VendorExtensions, content_of
 from ..model.header import Axis, FeatureType, Revision
-from ..model.info import FileInfo
+from ..model.info import ExtensionFile, FileInfo
 from ..model.naming import (
     CHECKSUM_FILE,
     DATA_FILE,
@@ -258,7 +258,7 @@ def _describe(container: Container, verify: bool) -> FileInfo:
         shape=document.layer_shape,
         storage=DataStorage.XML if document.link is None else DataStorage.BINARY,
         metadata=document.metadata,
-        extensions=_read_extensions(container, document.vendor_ids, taken, document.revision),
+        extensions=_list_extensions(container, document.vendor_ids, taken, document.revision),
     )
 
 
@@ -268,6 +268,36 @@ def _format_files(document: Document) -> set[str]:
     if (name := _member_or_none(document.checksum_file)) is not None:
         taken.add(name)
     return taken
+
+
+def _list_extensions(
+    container: Container, ids: Sequence[str], taken: set[str], revision: Revision
+) -> tuple[ExtensionFile, ...]:
+    """List the vendor specific IDs and their files like :func:`_read_extensions`, unread."""
+    if not revision.has_vendor_ids:
+        if not ids:
+            return ()
+        names = [
+            name
+            for name in container.names
+            if name not in taken and local_member_path(name) == name
+        ]
+        if not names:
+            return (ExtensionFile(ids[0]),)
+        return tuple(ExtensionFile(ids[0], name, container.size(name)) for name in names)
+    listed = []
+    for uri in ids:
+        try:
+            member = vendor_extension_path(uri)
+        except X3pFormatError:
+            listed.append(ExtensionFile(uri))  # a URI without a path names no file
+            continue
+        name = member.replace("\\", "/")
+        if container.has(name) and name not in RESERVED_NAMES:
+            listed.append(ExtensionFile(uri, name, container.size(name)))
+        else:
+            listed.append(ExtensionFile(uri))
+    return tuple(listed)
 
 
 def _read_extensions(

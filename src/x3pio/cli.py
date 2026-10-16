@@ -143,21 +143,27 @@ def _tail_fields(description: FileDescription) -> list[tuple[str, str]]:
             ("Identification", metadata.probing_system.identification),
             ("Comment", metadata.comment if metadata.comment is not None else ""),
         ]
-    extensions = description.extensions
-    if description.revision.has_vendor_ids:
-        fields += [
-            ("VendorSpecificID", uri if extensions._has_file(uri) else f"{uri} (no file)")
-            for uri in extensions
-        ]
-    else:
-        ids, files = extensions._parts()
-        fields += [("VendorSpecificID", vendor) for vendor in ids]
-        fields += [("VendorFile", path) for path in files]
     return fields
 
 
+def _extension_fields(summary: FileInfo) -> list[tuple[str, str]]:
+    if summary.revision.has_vendor_ids:
+        return [
+            ("VendorSpecificID", e.vendor_id if e.path is not None else f"{e.vendor_id} (no file)")
+            for e in summary.extensions
+        ]
+    ids = dict.fromkeys(e.vendor_id for e in summary.extensions)
+    files = [e.path for e in summary.extensions if e.path is not None]
+    return [("VendorSpecificID", vendor) for vendor in ids] + [("VendorFile", f) for f in files]
+
+
 def _info_fields(summary: FileInfo) -> list[tuple[str, str]]:
-    return [*_head_fields(summary), *_size_fields(summary), *_tail_fields(summary)]
+    return [
+        *_head_fields(summary),
+        *_size_fields(summary),
+        *_tail_fields(summary),
+        *_extension_fields(summary),
+    ]
 
 
 def _print_info(path: str) -> None:

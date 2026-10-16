@@ -15,6 +15,7 @@ Reading and Writing
 .. autofunction:: x3pio.info
 .. autoclass:: x3pio.FileDescription
 .. autoclass:: x3pio.FileInfo
+.. autoclass:: x3pio.ExtensionFile
 .. autofunction:: x3pio.write
 .. autofunction:: x3pio.write_points
 

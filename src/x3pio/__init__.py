@@ -46,7 +46,7 @@ from .model.header import (
     ProbingType,
     Revision,
 )
-from .model.info import FileDescription, FileInfo
+from .model.info import ExtensionFile, FileDescription, FileInfo
 from .model.layers import (
     Layer,
     PointLayer,
@@ -63,6 +63,7 @@ __all__ = [
     "CoordinateSystem",
     "DataStorage",
     "DataType",
+    "ExtensionFile",
     "FeatureType",
     "FileDescription",
     "FileInfo",
