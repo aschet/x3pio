@@ -71,12 +71,12 @@ def test_the_summary_is_that_of_the_file_that_is_read() -> None:
     ):
         blob = _blob(file)
         summary = x3pio.info(io.BytesIO(blob))
-        read = X3pFile.loads(blob)
-        assert summary.header == read.header
-        assert summary.feature_type is read.feature_type
-        assert summary.layer_count == len(read.layers)
-        assert summary.shape == read.layers[0].z.shape
-        assert summary.metadata == read.metadata
+        parsed = X3pFile.loads(blob)
+        assert summary.header == parsed.header
+        assert summary.feature_type is parsed.feature_type
+        assert summary.layer_count == len(parsed.layers)
+        assert summary.shape == parsed.layers[0].z.shape
+        assert summary.metadata == parsed.metadata
 
 
 def test_the_storage_form_is_reported() -> None:

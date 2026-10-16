@@ -23,9 +23,10 @@ from .model.files import (
     Profile,
     Surface,
     X3pFile,
+    parse_file,
 )
 from .model.info import FileInfo
-from .model.streams import PathOrStream
+from .model.streams import PathOrStream, read_bytes
 
 __all__ = ["info", "read", "write", "write_points"]
 
@@ -36,16 +37,19 @@ def read(path: PathOrStream, *, verify: bool = True) -> X3pFile:
     A set of known deviations from the standard is tolerated, see :mod:`x3pio.codec`; other
     deviations raise an error.
 
-    :param path: Path to an ``.x3p`` file, or an open binary file object.
-    :param verify: Check the MD5 checksums stored in the file, see :meth:`X3pFile.loads`.
+    :param path: Path to an ``.x3p`` file, or an open binary file object. The content of a file in
+        memory is read with :meth:`X3pFile.loads`.
+    :param verify: Check the MD5 checksums stored in the file, of ``main.xml`` and of the binary
+        files. A checksum that is missing or malformed is not checked.
     :returns: A :class:`Profile`, a :class:`Surface` or a :class:`PointCloud`, with the
         coordinates in metres (``NaN`` for points that are not measured), metadata and
         extension files.
-    :raises X3pFormatError: If the file is not an x3p file, or is damaged
-        beyond what can be tolerated.
-    :raises X3pChecksumError: If ``verify`` and a stored checksum does not match.
+    :raises X3pFormatError: If the file is not an x3p file, or is damaged beyond what can be
+        tolerated.
+    :raises X3pChecksumError: If ``verify`` and a stored checksum does not match, so the file was
+        changed or damaged after it was written.
     """
-    return X3pFile.open(path, verify=verify)
+    return parse_file(read_bytes(path), verify=verify)
 
 
 def info(path: PathOrStream, *, verify: bool = True) -> FileInfo:

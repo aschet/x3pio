@@ -11,10 +11,10 @@ import x3pio
 
 # The sample files of the repository, one of each kind; use the path of your own files instead.
 SAMPLES = Path(__file__).resolve().parent.parent / "tests" / "samples" / "iso25178-72-fdam1"
-surface = x3pio.Surface.open(SAMPLES / "surface_binary.x3p")
-irregular = x3pio.Surface.open(SAMPLES / "surface_irregular_binary.x3p")
-profile = x3pio.Profile.open(SAMPLES / "profile_layers_binary.x3p")
-cloud = x3pio.PointCloud.open(SAMPLES / "point_cloud_binary.x3p")
+surface = x3pio.read(SAMPLES / "surface_binary.x3p")
+irregular = x3pio.read(SAMPLES / "surface_irregular_binary.x3p")
+profile = x3pio.read(SAMPLES / "profile_layers_binary.x3p")
+cloud = x3pio.read(SAMPLES / "point_cloud_binary.x3p")
 
 # The heights are a NumPy array in metres, the distance between the points is ``spacing``, and
 # ``extent`` gives the edges of the grid cells that image plots ask for.

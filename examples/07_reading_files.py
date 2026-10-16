@@ -48,12 +48,6 @@ for original in files:
 summary = x3pio.info(io.BytesIO(files[1].dumps()))
 print(summary.feature_type.name, summary.layer_count, "layers of", summary.shape)
 
-# A file of another kind than the one that was asked for is an error.
-try:
-    x3pio.Surface.loads(files[3].dumps())
-except x3pio.X3pFormatError as error:
-    print("asking for a surface:", error)
-
 # The MD5 checksums of a file are verified. A file that was changed after it was written raises
 # ``X3pChecksumError``, and ``verify=False`` skips the check. Both errors derive from ``X3pError``.
 source = zipfile.ZipFile(io.BytesIO(files[0].dumps()))

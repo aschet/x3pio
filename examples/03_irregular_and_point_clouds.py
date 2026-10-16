@@ -51,5 +51,5 @@ print("read back:", x3pio.read(io.BytesIO(buffer.getvalue())).layers[0].points()
 # A point that is not measured is left out of a point cloud, since the list has no place for it.
 # The storage type decides the precision of the file: 16 bits keep about 5 significant digits.
 small = x3pio.PointCloud.from_points(cloud_points, data_type=x3pio.DataType.INT16)
-stored = x3pio.PointCloud.loads(small.dumps())  # what the file holds
+stored = x3pio.X3pFile.loads(small.dumps())  # what the file holds
 print("largest error with 16 bits:", float(np.abs(stored.layer.points() - cloud_points).max()))

@@ -33,6 +33,7 @@ from x3pio import (
     SurfaceLayer,
     X3pFile,
     X3pFormatError,
+    read,
 )
 from x3pio.cli import main
 
@@ -125,14 +126,10 @@ def test_read_returns_the_type_the_file_has() -> None:
         np.testing.assert_allclose(stacked(again), stacked(original))
 
 
-def test_a_type_asked_for_has_to_be_the_one_the_file_has() -> None:
+def test_a_file_is_read_as_the_kind_it_holds() -> None:
     cloud = _blob(PointCloud.from_points(np.zeros((2, 3)))).getvalue()
-    with pytest.raises(X3pFormatError, match="holds a point cloud, not a surface"):
-        Surface.loads(cloud)
-    with pytest.raises(X3pFormatError, match="not a profile"):
-        Profile.open(io.BytesIO(cloud))
-    assert isinstance(PointCloud.loads(cloud), PointCloud)
     assert isinstance(X3pFile.loads(cloud), PointCloud)
+    assert isinstance(read(io.BytesIO(cloud)), PointCloud)
 
 
 def test_a_profile_file_with_a_single_row_is_a_profile_of_layers() -> None:

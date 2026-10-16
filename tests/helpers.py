@@ -131,6 +131,12 @@ def array_file(data: object, **kwargs: object) -> x3pio.X3pFile:
     raise x3pio.X3pFormatError("Data must be a 1-D profile, a 2-D surface or a 3-D array of layers")
 
 
+def as_surface(file: x3pio.X3pFile) -> x3pio.Surface:
+    """Return ``file``, which a test knows to be a surface, as one."""
+    assert isinstance(file, x3pio.Surface)
+    return file
+
+
 @overload
 def stacked(file: x3pio.X3pFile, name: Literal["z"] = "z") -> np.ndarray: ...
 

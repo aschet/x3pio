@@ -29,9 +29,7 @@ with tempfile.TemporaryDirectory() as folder:
     path = Path(folder) / "surface.x3p"
     x3pio.write(path, heights, x_scale=1e-6, y_scale=1e-6, metadata=metadata)
 
-    surface = x3pio.Surface.open(
-        path
-    )  # the type is part of the call: another kind of file is an error
+    surface = x3pio.read(path)  # another kind of file is an error
     print(type(surface).__name__, len(surface.layers), "layer")
     print("measured with", surface.metadata.instrument.model, "by", surface.metadata.creator)
 

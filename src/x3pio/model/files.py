@@ -78,7 +78,7 @@ from .header import (
 )
 from .layers import Layer, Point, PointLayer, ProfileLayer, SurfaceLayer
 from .storage import DataStorage
-from .streams import PathOrStream, read_bytes, write_bytes
+from .streams import PathOrStream, write_bytes
 from .validation import validate
 
 __all__ = [
@@ -253,13 +253,6 @@ class X3pFile(ABC):
         ('Surface', 'SURFACE')
         >>> [layer.points().shape for layer in x3p.layers]
         [(2, 3, 3)]
-
-    ``open`` and ``loads`` of a type refuse a file of another kind::
-
-        >>> x3pio.PointCloud.loads(blob)
-        Traceback (most recent call last):
-        ...
-        x3pio.exceptions.X3pFormatError: The file holds a surface, not a point cloud
 
     The arrays of a layer belong to the file, so changing them changes the file, and it can be
     written again. The methods that return a copy, ``with_metadata``, ``with_revision``,
@@ -807,41 +800,23 @@ class X3pFile(ABC):
             return False
         return True
 
-    @classmethod
-    def loads(cls, data: bytes, *, verify: bool = True) -> Self:
-        """Parse an in-memory x3p file.
+    @staticmethod
+    def loads(data: bytes, *, verify: bool = True) -> X3pFile:
+        """Parse an in-memory x3p file; the counterpart of :meth:`dumps`.
 
-        A set of known deviations from the standard is tolerated, see :mod:`x3pio.codec`;
-        other deviations raise an error.
+        :func:`~x3pio.read` reads a path or a stream.
 
         :param data: The content of an ``.x3p`` file.
         :param verify: Check the MD5 checksums stored in the file, of ``main.xml`` and of the
             binary files. A checksum that is missing or malformed is not checked.
         :returns: A :class:`Profile`, a :class:`Surface` or a :class:`PointCloud`, as the file
-            says. Called on one of them, the file has to be of that type.
-        :raises X3pFormatError: If ``data`` is not an x3p file, or is damaged
-            beyond what can be tolerated, or is not the type this was called on.
+            says.
+        :raises X3pFormatError: If ``data`` is not an x3p file, or is damaged beyond what can be
+            tolerated.
         :raises X3pChecksumError: If ``verify`` and a stored checksum does not match the
             content, so the file was changed or damaged after it was written.
         """
-        file = _from_parsed(codec().parse(data, verify=verify))
-        if not isinstance(file, cls):
-            raise X3pFormatError(
-                f"The file holds a {file.feature_type.name.lower().replace('_', ' ')}, "
-                f"not a {'point cloud' if cls is PointCloud else cls.__name__.lower()}"
-            )
-        return file
-
-    @classmethod
-    def open(cls, path: PathOrStream, *, verify: bool = True) -> Self:
-        """Read an x3p file.
-
-        :param path: Path to an ``.x3p`` file, or an open binary file object.
-        :param verify: See :meth:`loads`.
-        :raises X3pFormatError: See :meth:`loads`.
-        :raises X3pChecksumError: See :meth:`loads`.
-        """
-        return cls.loads(read_bytes(path), verify=verify)
+        return parse_file(data, verify=verify)
 
     def _validate(self) -> None:
         """Check that the file can be written as a file that conforms to the standard."""
@@ -1416,7 +1391,7 @@ class PointCloud(X3pFile):
     The storage type decides the precision of the file, ``float64`` by default::
 
         >>> compact = x3pio.PointCloud.from_points(points, data_type=x3pio.DataType.INT16)
-        >>> stored = x3pio.PointCloud.loads(compact.dumps())
+        >>> stored = x3pio.X3pFile.loads(compact.dumps())
         >>> bool(np.abs(stored.layer.points() - points).max() < 1e-7)
         True
     """
@@ -1482,6 +1457,19 @@ class PointCloud(X3pFile):
     def layer(self) -> PointLayer:
         """The one layer of the point cloud."""
         return self.layers[0]
+
+
+def parse_file(data: bytes, *, verify: bool = True) -> X3pFile:
+    """Parse the content of an x3p file into a profile, a surface or a point cloud.
+
+    :param verify: Check the MD5 checksums stored in the file, of ``main.xml`` and of the binary
+        files. A checksum that is missing or malformed is not checked.
+    :raises X3pFormatError: If ``data`` is not an x3p file, or is damaged beyond what can be
+        tolerated.
+    :raises X3pChecksumError: If ``verify`` and a stored checksum does not match the content, so
+        the file was changed or damaged after it was written.
+    """
+    return _from_parsed(codec().parse(data, verify=verify))
 
 
 def _from_parsed(fields: dict[str, Any]) -> X3pFile:

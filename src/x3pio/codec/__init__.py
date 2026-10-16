@@ -18,7 +18,7 @@ is ensured by tests that validate the written ``main.xml`` against the schemas o
 
 Checksums. The MD5 checksums of ``main.xml``, of the binary data file and of the validity file
 are verified. A mismatch raises :class:`~x3pio.X3pChecksumError`: the file was changed or damaged
-after it was written. ``read(path, verify=False)``, ``X3pFile.open`` and ``X3pFile.loads`` skip
+after it was written. ``read(path, verify=False)`` and ``X3pFile.loads`` skip
 the check. A checksum that is missing or malformed, a checksum file that is missing, outside the
 container, with another name or with only the digest, in either case and with or without the
 file name that ``md5sum`` writes, is accepted.

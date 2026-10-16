@@ -19,8 +19,8 @@ import pytest
 import xmlschema
 
 import x3pio
-from helpers import SCHEMAS, absolute, container_from_main, flat_points, stacked, unzip
-from x3pio import AxisType, DataStorage, DataType, FeatureType, Revision, Surface, X3pFile
+from helpers import SCHEMAS, absolute, as_surface, container_from_main, flat_points, stacked, unzip
+from x3pio import AxisType, DataStorage, DataType, FeatureType, Revision, X3pFile, read
 
 SAMPLES_DIR = Path(__file__).parent / "interop_samples"
 OPENGPS_DIR = SAMPLES_DIR / "opengps"
@@ -131,7 +131,7 @@ def test_sample4_xml_and_binary_hold_the_same_data() -> None:
 
 
 def test_sample4_has_the_axes_of_a_regular_grid() -> None:
-    x3p = Surface.open(OPENGPS_DIR / SAMPLE4[0])
+    x3p = as_surface(read(OPENGPS_DIR / SAMPLE4[0]))
     assert x3p.is_regular_grid
     assert x3p.layers[0].x_values[:3].tolist() == pytest.approx([0.0, 0.016016, 0.032032])
     assert x3p.metadata is not None
@@ -197,9 +197,9 @@ def test_sample3_has_an_absolute_integer_y_axis() -> None:
 
 @pytest.mark.parametrize("name", ALL)
 def test_converting_a_sample_gives_a_valid_file_with_the_same_data(name: str) -> None:
-    read = _read(name)
+    sample = _read(name)
     for revision in Revision:
-        original = read.with_revision(revision)
+        original = sample.with_revision(revision)
         for storage in DataStorage:
             converted = original.dumps(storage=storage)
             SCHEMAS[revision].validate(unzip(converted)["main.xml"].decode())
