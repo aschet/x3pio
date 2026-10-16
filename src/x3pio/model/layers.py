@@ -34,7 +34,7 @@ from .header import Header
 if TYPE_CHECKING:
     from typing import Unpack
 
-    from numpy.typing import ArrayLike
+    from numpy.typing import ArrayLike, NDArray
 
     from .files import ArrayOptions, PointOptions
 
@@ -204,7 +204,7 @@ class Layer:
         return tuple(self.z.shape)
 
     @property
-    def valid(self) -> np.ndarray:
+    def valid(self) -> NDArray[np.bool_]:
         """Boolean mask of the points that are measured."""
         return ~np.isnan(self.z)
 
@@ -220,7 +220,7 @@ class Layer:
 
     def points(
         self, *, coordinate_system: CoordinateSystem = CoordinateSystem.GLOBAL
-    ) -> np.ndarray:
+    ) -> NDArray[np.float64]:
         """Return the points as an array of ``x``, ``y``, ``z`` in metres, shaped like the layer.
 
         The shape is ``z.shape + (3,)``: ``(rows, columns, 3)`` for a surface layer,
@@ -269,14 +269,14 @@ class ProfileLayer(Layer):
         return cube(self.z), cube(self.x), cube(self.y)  # type: ignore[return-value]
 
     @property
-    def x_values(self) -> np.ndarray:
+    def x_values(self) -> NDArray[np.float64]:
         """X coordinates of the points in metres: ``x_u = (u - 1) * increment``.
 
         :raises ValueError: If the x axis is absolute.
         """
         if not self.header.x.is_incremental:
             raise ValueError("x_values needs an incremental x axis")
-        return np.arange(self.z.shape[-1]) * self.header.x.increment
+        return np.arange(self.z.shape[-1], dtype=np.float64) * self.header.x.increment
 
     @property
     def spacing(self) -> float:
@@ -346,17 +346,17 @@ class SurfaceLayer(Layer):
         )
 
     @property
-    def x_values(self) -> np.ndarray:
+    def x_values(self) -> NDArray[np.float64]:
         """X coordinates of the columns in metres: ``x_u = (u - 1) * increment``.
 
         :raises ValueError: If the x axis is absolute.
         """
         if not self.header.x.is_incremental:
             raise ValueError("x_values needs an incremental x axis")
-        return np.arange(self.z.shape[-1]) * self.header.x.increment
+        return np.arange(self.z.shape[-1], dtype=np.float64) * self.header.x.increment
 
     @property
-    def y_values(self) -> np.ndarray:
+    def y_values(self) -> NDArray[np.float64]:
         """Y coordinates of the rows in metres: ``y_v = (v - 1) * increment``.
 
         ``y`` increases with the row index.
@@ -365,7 +365,7 @@ class SurfaceLayer(Layer):
         """
         if not self.header.y.is_incremental:
             raise ValueError("y_values needs an incremental y axis")
-        return np.arange(self.z.shape[-2]) * self.header.y.increment
+        return np.arange(self.z.shape[-2], dtype=np.float64) * self.header.y.increment
 
     @property
     def spacing(self) -> tuple[float, float]:

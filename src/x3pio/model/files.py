@@ -52,7 +52,7 @@ from datetime import UTC, datetime
 from typing import Any, ClassVar, Literal, Self, TypedDict, TypeVar, Unpack
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import ArrayLike, NDArray
 
 from .._version import __version__
 from ..exceptions import X3pFormatError
@@ -850,7 +850,7 @@ class X3pFile(ABC):
     def _records(self) -> np.ndarray:
         return codec().records(self)
 
-    def raw_data(self) -> np.ndarray:
+    def raw_data(self) -> NDArray[Any]:
         """Coded coordinates in the file's native on-disk layout.
 
         This is what a binary data file holds: one record per point in storage
