@@ -8,65 +8,34 @@ SPDX-License-Identifier: MIT
 
 The scripts are in the `examples/` folder.
 
-## Surfaces
+## Writing
 
-```{literalinclude} ../examples/01_surfaces.py
+Surfaces, profiles, irregular surfaces and point clouds, with metadata, placement, vendor
+extensions, different storage types and revisions.
+
+```{literalinclude} ../examples/write.py
 :language: python
-:start-after: "License-Identifier"
 ```
 
-## Profiles
+## Reading
 
-```{literalinclude} ../examples/02_profiles_and_layers.py
+The layers, the metadata and the checksums of a file, from a path, a stream or bytes.
+
+```{literalinclude} ../examples/read.py
 :language: python
-:start-after: "License-Identifier"
 ```
 
-## Irregular Surfaces and Point Clouds
+## Modifying
 
-```{literalinclude} ../examples/03_irregular_and_point_clouds.py
+Changing the values, making files of parts of a file, converting it to another revision or storage
+type, and moving it in the global coordinate system.
+
+```{literalinclude} ../examples/modify.py
 :language: python
-:start-after: "License-Identifier"
-```
-
-## Placement
-
-```{literalinclude} ../examples/04_placement_and_coordinate_systems.py
-:language: python
-:start-after: "License-Identifier"
-```
-
-## Metadata
-
-```{literalinclude} ../examples/05_metadata.py
-:language: python
-:start-after: "License-Identifier"
-```
-
-## Revisions and Vendor Extensions
-
-```{literalinclude} ../examples/06_revisions_and_extensions.py
-:language: python
-:start-after: "License-Identifier"
-```
-
-## Reading Files
-
-```{literalinclude} ../examples/07_reading_files.py
-:language: python
-:start-after: "License-Identifier"
-```
-
-## Modifying Values
-
-```{literalinclude} ../examples/08_modifying_values.py
-:language: python
-:start-after: "License-Identifier"
 ```
 
 ## Plotting
 
-```{literalinclude} ../examples/09_plotting.py
+```{literalinclude} ../examples/plot.py
 :language: python
-:start-after: "License-Identifier"
 ```
