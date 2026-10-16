@@ -491,3 +491,11 @@ def test_a_placement_that_is_not_finite_or_not_a_rotation_cannot_be_written() ->
     skew = x3p.with_placement(Placement._unchecked(np.eye(3) * 2.0, np.zeros(3)))
     with pytest.raises(X3pFormatError, match="within"):
         skew.dumps()
+
+
+def test_a_bad_value_and_a_bad_file_are_value_errors() -> None:
+    with pytest.raises(ValueError, match="not a zip archive"):
+        x3pio.Surface.loads(b"not an x3p file at all")
+    with pytest.raises(ValueError, match="positive"):
+        x3pio.Surface.from_array(np.zeros((2, 2)), x_scale=-1.0, y_scale=1.0)
+    assert issubclass(x3pio.X3pChecksumError, ValueError)
