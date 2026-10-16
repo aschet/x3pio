@@ -165,13 +165,13 @@ def test_a_profile_has_its_layers_as_typed_views() -> None:
 def test_the_layers_of_absolute_axes_carry_their_coordinates() -> None:
     header = Header(x=Axis(AxisType.ABSOLUTE, DataType.FLOAT64, 1.0), y=Axis(AxisType.ABSOLUTE))
     z = np.arange(8.0).reshape(2, 2, 2)
-    surface = Surface.from_stacked(header, z, x=z * 2, y=z * 3)
+    surface = Surface._from_stacked(header, z, x=z * 2, y=z * 3)
     for index, layer in enumerate(surface.layers):
         assert layer.x is not None
         assert layer.y is not None
         assert np.array_equal(layer.x, z[index] * 2)
         assert np.array_equal(layer.y, z[index] * 3)
-    profile = Profile.from_stacked(header, z[:, 0], x=z[:, 0] * 2, y=z[:, 0] * 3)
+    profile = Profile._from_stacked(header, z[:, 0], x=z[:, 0] * 2, y=z[:, 0] * 3)
     assert profile.layers[1].x is not None
     assert profile.layers[1].x.tolist() == [8.0, 10.0]
 
@@ -196,7 +196,7 @@ def test_a_profile_has_an_x_axis_only() -> None:
     profile = Profile.from_array(np.zeros(3), x_scale=0.5)
     assert profile.layers[0].x_values.tolist() == [0.0, 0.5, 1.0]
     assert not hasattr(profile, "y_axis")
-    absolute = Profile.from_stacked(
+    absolute = Profile._from_stacked(
         Header(x=Axis(AxisType.ABSOLUTE)), np.zeros((1, 2)), x=np.zeros((1, 2))
     )
     with pytest.raises(ValueError, match="x_values"):
@@ -205,7 +205,7 @@ def test_a_profile_has_an_x_axis_only() -> None:
 
 def test_a_surface_with_an_absolute_axis_has_no_such_axis() -> None:
     header = Header(y=Axis(AxisType.ABSOLUTE))
-    surface = Surface.from_stacked(header, np.zeros((1, 2, 2)), y=np.zeros((1, 2, 2)))
+    surface = Surface._from_stacked(header, np.zeros((1, 2, 2)), y=np.zeros((1, 2, 2)))
     assert not surface.is_regular_grid
     with pytest.raises(ValueError, match="y_values"):
         _ = surface.layers[0].y_values
@@ -560,13 +560,13 @@ def test_a_point_cloud_has_exactly_one_layer() -> None:
 
 def test_stacked_arrays_make_layers_that_view_them() -> None:
     z = np.arange(8.0).reshape(2, 2, 2)
-    surface = Surface.from_stacked(Header(), z)
+    surface = Surface._from_stacked(Header(), z)
     z[1, 0, 0] = -5.0
     assert surface.layers[1].z[0, 0] == -5.0
     with pytest.raises(X3pFormatError, match="same number of layers"):
-        Surface.from_stacked(Header(), z, x=z[:1])
+        Surface._from_stacked(Header(), z, x=z[:1])
     with pytest.raises(X3pFormatError, match="must be arrays"):
-        Surface.from_stacked(Header(), np.float64(1.0))  # type: ignore[arg-type]
+        Surface._from_stacked(Header(), np.float64(1.0))  # type: ignore[arg-type]
 
 
 def test_a_surface_is_made_from_its_layers() -> None:

@@ -157,11 +157,10 @@ class Layer:
     __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
-        """Show the arrays, the axes and the placement."""
-        return (
-            f"{type(self).__name__}(z={self.z!r}, x={self.x!r}, y={self.y!r}, "
-            f"header={self.header!r}, placement={self.placement!r})"
-        )
+        """Show the type and the shape, and whether the points lie on a regular grid."""
+        shape = " x ".join(str(size) for size in self.shape)
+        grid = ", regular grid" if self.is_regular_grid else ""
+        return f"<{type(self).__name__} {shape}{grid}>"
 
     def _derived(
         self,

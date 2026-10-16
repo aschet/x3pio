@@ -761,5 +761,5 @@ def test_extensions_given_to_the_constructor_are_written() -> None:
     x3p = _file()
     extensions = VendorExtensions()
     extensions["http://a.b/c.bin"] = b"1"
-    given = Surface.from_stacked(header=x3p.header, z=stacked(x3p), extensions=extensions)
+    given = Surface._from_stacked(header=x3p.header, z=stacked(x3p), extensions=extensions)
     assert X3pFile.loads(given.dumps()).extensions == {"http://a.b/c.bin": b"1"}

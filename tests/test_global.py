@@ -86,13 +86,13 @@ def test_a_point_cloud_has_no_layers() -> None:
 
 
 def test_two_dimensional_data_cannot_be_written_as_a_surface() -> None:
-    x3p = x3pio.Surface.from_stacked(Header(), np.zeros((2, 3)))
+    x3p = x3pio.Surface._from_stacked(Header(), np.zeros((2, 3)))
     with pytest.raises(x3pio.X3pFormatError, match="must be 2-D"):
         x3p.dumps()
 
 
 def test_profile_property_of_hand_built_data() -> None:
-    x3p = x3pio.Profile.from_stacked(Header(), np.arange(4.0).reshape(1, 4))
+    x3p = x3pio.Profile._from_stacked(Header(), np.arange(4.0).reshape(1, 4))
     assert stacked(x3p)[0].tolist() == [0.0, 1.0, 2.0, 3.0]
 
 

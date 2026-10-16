@@ -236,7 +236,7 @@ def _absolute_surface(x_type: DataType, y_type: DataType) -> Surface:
         y=Axis(AxisType.ABSOLUTE, y_type, 1e-6 if y_type.name.startswith("INT") else 1.0),
         z=Axis(AxisType.ABSOLUTE, DataType.FLOAT64, 1.0),
     )
-    return Surface.from_stacked(header, z, x=x, y=y)
+    return Surface._from_stacked(header, z, x=x, y=y)
 
 
 @pytest.mark.parametrize("storage", ALL_STORAGES)
@@ -358,11 +358,11 @@ def test_inconsistent_files_cannot_be_written(
     file_type: type[X3pFile], header: Header, data: np.ndarray, message: str
 ) -> None:
     with pytest.raises(X3pFormatError, match=message):
-        file_type.from_stacked(header, data).dumps()
+        file_type._from_stacked(header, data).dumps()
 
 
 def test_incremental_axis_with_coordinates_cannot_be_written() -> None:
-    x3p = Surface.from_stacked(Header(), np.zeros((1, 1, 1)), x=np.zeros((1, 1, 1)))
+    x3p = Surface._from_stacked(Header(), np.zeros((1, 1, 1)), x=np.zeros((1, 1, 1)))
     with pytest.raises(X3pFormatError, match="incremental, but has coordinates"):
         x3p.dumps()
 
@@ -370,7 +370,7 @@ def test_incremental_axis_with_coordinates_cannot_be_written() -> None:
 def test_absolute_axis_with_wrongly_shaped_coordinates_cannot_be_written() -> None:
     header = Header(x=Axis(AxisType.ABSOLUTE))
     with pytest.raises(X3pFormatError, match="shaped like data"):
-        Surface.from_stacked(header, np.zeros((1, 2, 2)), x=np.zeros((1, 1, 1))).dumps()
+        Surface._from_stacked(header, np.zeros((1, 2, 2)), x=np.zeros((1, 1, 1))).dumps()
 
 
 @pytest.mark.parametrize("value", [np.nan, np.inf, -np.inf])
@@ -517,3 +517,29 @@ def test_loads_is_the_counterpart_of_dumps() -> None:
     surface = Surface.from_array(np.arange(6.0).reshape(2, 3), x_scale=1e-6, y_scale=2e-6)
     assert X3pFile.loads(surface.dumps()) == surface
     assert X3pFile.loads(surface.dumps()) == read(io.BytesIO(surface.dumps()))
+
+
+def test_the_repr_of_a_file_is_one_line_with_what_identifies_it() -> None:
+    surface = Surface.from_array(np.zeros((480, 640)), x_scale=1e-6, y_scale=1e-6)
+    profile = Profile.from_array(np.zeros((2, 200)), x_scale=1e-6)
+    cloud = PointCloud.from_points(np.zeros((5000, 3)))
+
+    assert repr(surface) == "<Surface ISO25178-72:2017/DAM1 binary, 1 layer, 480 x 640, float64>"
+    assert repr(profile) == "<Profile ISO25178-72:2017/DAM1 binary, 2 layers, 200, float64>"
+    assert repr(cloud) == "<PointCloud ISO25178-72:2017/DAM1 binary, 1 layer, 5000, float64>"
+    assert repr(surface.layers[0]) == "<SurfaceLayer 480 x 640, regular grid>"
+    assert repr(cloud.layer) == "<PointLayer 5000>"
+    buffer = io.BytesIO(surface.dumps())
+    assert repr(x3pio.info(buffer)) == (
+        "<FileInfo surface ISO25178-72:2017/DAM1 binary, 1 layer, 480 x 640, float64>"
+    )
+
+
+def test_the_storage_form_is_checked_when_it_is_set() -> None:
+    surface = Surface.from_array(np.zeros((2, 2)), x_scale=1.0, y_scale=1.0)
+    surface.storage = DataStorage.XML
+    assert surface.storage is DataStorage.XML
+    with pytest.raises(TypeError, match="DataStorage"):
+        surface.storage = "binary"  # type: ignore[assignment]
+    with pytest.raises(TypeError, match="DataStorage"):
+        Surface.from_array(np.zeros((2, 2)), x_scale=1.0, y_scale=1.0, storage="text")  # type: ignore[arg-type]

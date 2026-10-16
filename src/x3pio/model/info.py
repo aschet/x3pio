@@ -60,7 +60,7 @@ class FileDescription(Protocol):
         ...
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, repr=False)
 class FileInfo:
     """The description of an x3p file: everything except the coordinates and the validity bits.
 
@@ -89,3 +89,13 @@ class FileInfo:
     storage: DataStorage
     metadata: Metadata | None
     extensions: VendorExtensions
+
+    def __repr__(self) -> str:
+        """Show the feature type, the revision, the storage form and the layers, on one line."""
+        shape = " x ".join(str(size) for size in self.shape)
+        return (
+            f"<FileInfo {self.feature_type.name.lower()} {self.revision.value} "
+            f"{self.storage.name.lower()}, {self.layer_count} "
+            f"layer{'s' if self.layer_count != 1 else ''}, {shape}, "
+            f"{self.header.z.data_type.name.lower()}>"
+        )

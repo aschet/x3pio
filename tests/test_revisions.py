@@ -108,7 +108,7 @@ def test_the_text_of_the_revision_gives_the_revision(text: str, revision: Revisi
 
 
 def test_new_files_follow_amd_1() -> None:
-    assert Surface.from_stacked(Header(), np.zeros((1, 1, 2))).revision is AMENDED
+    assert Surface._from_stacked(Header(), np.zeros((1, 1, 2))).revision is AMENDED
     assert array_file(np.zeros(2), x_scale=1.0).revision is AMENDED
     assert PointCloud.from_points(np.zeros((2, 3))).revision is AMENDED
     assert x3pio.read(io.BytesIO(build())).revision is AMENDED
@@ -142,9 +142,11 @@ def test_a_file_has_the_extensions_of_its_revision() -> None:
 
 
 def test_empty_extensions_of_another_revision_take_the_revision_of_the_file() -> None:
-    base = Surface.from_stacked(Header(), np.zeros((1, 1, 2)), revision=BASE)
+    base = Surface._from_stacked(Header(), np.zeros((1, 1, 2)), revision=BASE)
     assert base.extensions._revision is BASE
-    amended = Surface.from_stacked(Header(), np.zeros((1, 1, 2)), extensions=VendorExtensions(BASE))
+    amended = Surface._from_stacked(
+        Header(), np.zeros((1, 1, 2)), extensions=VendorExtensions(BASE)
+    )
     assert amended.extensions._revision is AMENDED
 
 
@@ -163,7 +165,7 @@ def test_the_revision_belongs_to_the_file_and_not_to_its_layers() -> None:
 def test_extensions_of_another_revision_are_not_written() -> None:
     x3p = _file(AMENDED)
     x3p.extensions["http://www.vendor.com/a.xml"] = b"<a/>"
-    x3p = Surface.from_stacked(x3p.header, stacked(x3p), revision=BASE, extensions=x3p.extensions)
+    x3p = Surface._from_stacked(x3p.header, stacked(x3p), revision=BASE, extensions=x3p.extensions)
     with pytest.raises(X3pFormatError, match="with_revision"):
         x3p.dumps()
 

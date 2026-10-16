@@ -111,7 +111,7 @@ def _matrix_file(
         z=Axis(AxisType.ABSOLUTE, resolved_type.type, increment),
     )
     metadata = options.get("metadata")
-    file = cls.from_stacked(
+    file = cls._from_stacked(
         header,
         flat,
         placement=placement,
@@ -147,7 +147,7 @@ def _absolute_file(cls: type[X3pFile], points: np.ndarray, options: PointOptions
     ]
     header = Header(x=axes[0], y=axes[1], z=axes[2])
     metadata = options.get("metadata")
-    file = cls.from_stacked(
+    file = cls._from_stacked(
         header,
         points[..., 2].copy(),
         points[..., 0].copy(),
@@ -685,10 +685,10 @@ def _from_parsed(fields: dict[str, Any]) -> X3pFile:
     """Make the type of file that a parsed file is, from the fields that the parser returns."""
     feature = fields.pop("feature_type")
     if feature is FeatureType.POINT_CLOUD:
-        return PointCloud.from_stacked(**fields)
+        return PointCloud._from_stacked(**fields)
     if feature is FeatureType.SURFACE:
-        return Surface.from_stacked(**fields)
+        return Surface._from_stacked(**fields)
     for name in ("z", "x", "y"):  # a profile has a single row, which the arrays leave out
         if fields[name] is not None:
             fields[name] = fields[name].reshape(fields[name].shape[0], fields[name].shape[2])
-    return Profile.from_stacked(**fields)
+    return Profile._from_stacked(**fields)

@@ -89,8 +89,7 @@ class X3pFile(ABC):
     can be changed.
 
     The constructor is the low-level one and takes the layers as they are, without copying them:
-    :meth:`from_stacked` makes a file from stacked arrays, and the ``from_`` methods of the types
-    from heights or points.
+    the ``from_`` methods of the types make a file from heights, layers or points.
 
     :param layers: The layers of the file, of the layer class of its type: they have to agree in
         shape, axes and placement, and a point cloud has one.
@@ -137,6 +136,17 @@ class X3pFile(ABC):
             extensions = VendorExtensions(revision)
         self.extensions = extensions
         self.storage = storage
+
+    @property
+    def storage(self) -> DataStorage:
+        """Whether the coordinates are written as XML text or binary."""
+        return self._storage
+
+    @storage.setter
+    def storage(self, value: DataStorage) -> None:
+        if not isinstance(value, DataStorage):
+            raise TypeError(f"storage must be a DataStorage member, got {value!r}")
+        self._storage = value
 
     @classmethod
     def _check_layers(cls, layers: Sequence[Layer]) -> None:
@@ -189,7 +199,7 @@ class X3pFile(ABC):
         )
 
     @classmethod
-    def from_stacked(
+    def _from_stacked(
         cls,
         header: Header,
         z: np.ndarray,
@@ -221,13 +231,6 @@ class X3pFile(ABC):
         :param extensions: See the constructor.
         :param storage: See the constructor.
         :raises X3pFormatError: If ``z``, ``x`` and ``y`` do not have the same number of layers.
-
-        >>> import numpy as np
-        >>> import x3pio
-        >>> header = x3pio.Header(x=x3pio.Axis(increment=1e-6), y=x3pio.Axis(increment=1e-6))
-        >>> surface = x3pio.Surface.from_stacked(header, np.zeros((2, 3, 4)))
-        >>> len(surface.layers), surface.layers[1].z.shape
-        (2, (3, 4))
         """
         layers = cls._layers_of(
             header, Placement.identity() if placement is None else placement, z, x, y
@@ -277,10 +280,13 @@ class X3pFile(ABC):
         )
 
     def __repr__(self) -> str:
-        """Show the type, the layers and what the file holds besides them."""
+        """Show the type, the revision, the storage form, and the number and shape of the layers."""
+        count = len(self._layers)
+        shape = " x ".join(str(size) for size in self._layers[0].shape)
         return (
-            f"{type(self).__name__}(layers={self._layers!r}, metadata={self.metadata!r}, "
-            f"extensions={self.extensions!r}, storage={self.storage!r})"
+            f"<{type(self).__name__} {self._revision.value} {self.storage.name.lower()}, "
+            f"{count} layer{'s' if count != 1 else ''}, {shape}, "
+            f"{self.header.z.data_type.name.lower()}>"
         )
 
     def _copy(
@@ -331,7 +337,7 @@ class X3pFile(ABC):
         )
 
     def _stacked(self) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
-        """Return ``z``, ``x`` and ``y`` of all layers stacked, as ``from_stacked`` takes them.
+        """Return ``z``, ``x`` and ``y`` of all layers stacked, as ``_from_stacked`` takes them.
 
         A single layer is stacked as a view, several are copied.
         """
