@@ -21,8 +21,8 @@ or ``from_points`` and give it to a file with ``X3pFile.with_layers``.
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, NamedTuple, Self, TypeVar
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
 import numpy as np
 
@@ -40,7 +40,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Layer",
-    "Point",
     "PointLayer",
     "ProfileLayer",
     "SurfaceLayer",
@@ -48,14 +47,6 @@ __all__ = [
 
 
 _LayerT = TypeVar("_LayerT", bound="Layer")
-
-
-class Point(NamedTuple):
-    """One 3-D point; ``NaN`` for a coordinate that is not measured."""
-
-    x: float
-    y: float
-    z: float
 
 
 class Layer:
@@ -253,26 +244,6 @@ class Layer:
         if coordinate_system is CoordinateSystem.GLOBAL:
             view = self.placement.apply(view)
         return view.reshape(*self.z.shape, 3)
-
-    def iter_points(
-        self,
-        *,
-        coordinate_system: CoordinateSystem = CoordinateSystem.GLOBAL,
-        drop_invalid: bool = False,
-    ) -> Iterator[Point]:
-        """Iterate over the points of :meth:`points` in storage order.
-
-        The points are made as an array first, see :meth:`points`.
-
-        :param coordinate_system: See :meth:`points`.
-        :param drop_invalid: Leave out the points that are not measured.
-        :returns: The points as :class:`Point` tuples.
-        """
-        points = self.points(coordinate_system=coordinate_system)
-        if drop_invalid:
-            points = points[self.valid]
-        for x, y, z in points.reshape(-1, 3).tolist():
-            yield Point(x, y, z)
 
 
 class ProfileLayer(Layer):

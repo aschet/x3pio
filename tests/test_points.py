@@ -21,7 +21,6 @@ from x3pio import (
     FeatureType,
     Header,
     Placement,
-    Point,
     PointCloud,
     Surface,
     X3pFile,
@@ -55,13 +54,6 @@ def test_points_come_in_storage_order() -> None:
     assert points[:3, 1].tolist() == [0.0, 0.0, 0.0]
     assert points[3, :2].tolist() == [0.0, 10.0]
     assert points[9, :2].tolist() == [0.0, 0.0]
-
-
-def test_iter_points_matches_the_points_of_the_layers() -> None:
-    x3p = _stack()
-    points = [point for layer in x3p.layers for point in layer.iter_points()]
-    assert points[4] == Point(1.0, 10.0, 4.0)
-    assert np.array_equal(np.array(points), flat_points(x3p))
 
 
 def test_global_coordinates_apply_rotation_and_offset() -> None:
@@ -107,7 +99,6 @@ def test_drop_invalid_removes_unmeasured_points() -> None:
     x3p = Surface.from_stacked(Header(), np.array([[[1.0, np.nan, 3.0]]]))
     assert flat_points(x3p).shape == (3, 3)
     assert flat_points(x3p, drop_invalid=True).shape == (2, 3)
-    assert len(list(x3p.layers[0].iter_points(drop_invalid=True))) == 2
 
 
 @pytest.mark.parametrize("storage", list(DataStorage))

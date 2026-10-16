@@ -49,7 +49,6 @@ from .model.header import (
 from .model.info import FileDescription, FileInfo
 from .model.layers import (
     Layer,
-    Point,
     PointLayer,
     ProfileLayer,
     SurfaceLayer,
@@ -73,7 +72,6 @@ __all__ = [
     "Metadata",
     "MetadataChanges",
     "Placement",
-    "Point",
     "PointCloud",
     "PointLayer",
     "PointOptions",

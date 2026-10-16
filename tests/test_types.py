@@ -632,10 +632,9 @@ def test_the_points_of_one_layer() -> None:
     np.testing.assert_array_equal(
         second.points(coordinate_system=x3pio.CoordinateSystem.VIEW)[0, :, 0], [0.0, 0.5, 1.0]
     )
-    assert len(list(second.iter_points())) == 6
     surface = Surface.from_layers(surface.layers)  # a copy has read-only arrays
     surface.layers[1].z[0, 0] = np.nan
-    assert len(list(surface.layers[1].iter_points(drop_invalid=True))) == 5
+    assert surface.layers[1].points()[surface.layers[1].valid].shape == (5, 3)
     with pytest.raises(IndexError):
         _ = surface.layers[2]
 

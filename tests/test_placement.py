@@ -328,9 +328,10 @@ def test_the_two_coordinate_systems_give_the_points_as_stored_and_as_placed() ->
         flat_points(x3p, coordinate_system=CoordinateSystem.GLOBAL), PLACEMENT.apply(view)
     )
     np.testing.assert_allclose(flat_points(x3p), PLACEMENT.apply(view))
-    assert [
-        point.z for point in x3p.layers[0].iter_points(coordinate_system=CoordinateSystem.VIEW)
-    ] == view[:, 2].tolist()
+    assert (
+        x3p.layers[0].points(coordinate_system=CoordinateSystem.VIEW)[..., 2].ravel().tolist()
+        == view[:, 2].tolist()
+    )
 
 
 def test_the_points_are_shaped_like_the_file() -> None:

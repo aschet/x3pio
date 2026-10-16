@@ -53,7 +53,6 @@ Layers
 .. autoclass:: x3pio.PointLayer
    :members:
    :inherited-members:
-.. autoclass:: x3pio.Point
 
 Coordinates
 -----------
