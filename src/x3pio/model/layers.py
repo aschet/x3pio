@@ -232,8 +232,22 @@ class Layer:
         has ``NaN`` in ``z``, and in ``x`` and ``y`` too if the placement turns the points, since
         the rotation couples them. The ``from_points`` constructors take this shape.
 
+        The array is made for this layer alone and is a new one, three times the size of ``z``.
+        ``points[layer.valid]`` gives the ``(N, 3)`` array of the measured points that point cloud
+        libraries take, and ``reshape(-1, 3)`` all of them.
+
         :param coordinate_system: :attr:`CoordinateSystem.GLOBAL`, with the placement applied,
             which is the default, or :attr:`CoordinateSystem.VIEW`, as stored.
+
+        >>> import numpy as np
+        >>> import x3pio
+        >>> layer = x3pio.Surface.from_array(
+        ...     np.array([[0.0, 1.0], [np.nan, 3.0]]), x_scale=1.0, y_scale=1.0
+        ... ).layers[0]
+        >>> layer.points().shape
+        (2, 2, 3)
+        >>> layer.points()[layer.valid].shape
+        (3, 3)
         """
         view = view_points(self.header, *self._cube())
         if coordinate_system is CoordinateSystem.GLOBAL:
@@ -248,14 +262,16 @@ class Layer:
     ) -> Iterator[Point]:
         """Iterate over the points of :meth:`points` in storage order.
 
+        The points are made as an array first, see :meth:`points`.
+
         :param coordinate_system: See :meth:`points`.
         :param drop_invalid: Leave out the points that are not measured.
         :returns: The points as :class:`Point` tuples.
         """
-        points = self.points(coordinate_system=coordinate_system).reshape(-1, 3)
+        points = self.points(coordinate_system=coordinate_system)
         if drop_invalid:
-            points = points[np.isfinite(points).all(axis=1)]
-        for x, y, z in points.tolist():
+            points = points[self.valid]
+        for x, y, z in points.reshape(-1, 3).tolist():
             yield Point(x, y, z)
 
 

@@ -202,3 +202,14 @@ def test_absolute_axis_without_coordinates_fails_to_give_points() -> None:
     header = Header(x=Axis(AxisType.ABSOLUTE))
     with pytest.raises(X3pFormatError, match="needs its coordinates"):
         flat_points(Surface.from_stacked(header, np.zeros((1, 1, 1))))
+
+
+def test_the_valid_mask_selects_the_measured_points_as_a_flat_array() -> None:
+    z = np.array([[0.0, 1.0, np.nan], [3.0, 4.0, 5.0]])
+    layer = x3pio.Surface.from_array(z, x_scale=1.0, y_scale=2.0).layers[0]
+
+    flat = layer.points()[layer.valid]
+
+    assert flat.shape == (5, 3)
+    assert np.isfinite(flat).all()
+    np.testing.assert_array_equal(flat, layer.points().reshape(-1, 3)[[0, 1, 3, 4, 5]])
