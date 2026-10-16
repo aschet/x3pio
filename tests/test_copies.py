@@ -12,6 +12,7 @@ from dataclasses import FrozenInstanceError
 import numpy as np
 import pytest
 
+import x3pio
 from helpers import absolute, array_file, stacked
 from x3pio import (
     CoordinateSystem,
@@ -147,3 +148,22 @@ def test_the_metadata_given_to_a_new_file_is_copied() -> None:
     assert x3p.metadata.comment == "mine"
     assert cloud.metadata is not None
     assert cloud.metadata.comment == "mine"
+
+
+def test_a_layer_holds_its_arrays_as_float64() -> None:
+    header = x3pio.Header()
+    stored = np.ones((2, 3))
+    layer = x3pio.SurfaceLayer(stored, header=header)
+    assert layer.z is stored  # float64 is kept as it is, so writing to the layer writes to it
+
+    converted = x3pio.SurfaceLayer(np.ones((2, 3), dtype=np.float32), header=header)
+    assert converted.z.dtype == np.float64
+
+    read_only = stored.view()
+    read_only.flags.writeable = False
+    assert not x3pio.SurfaceLayer(read_only, header=header).z.flags.writeable
+
+    absolute = x3pio.Header(x=x3pio.Axis(x3pio.AxisType.ABSOLUTE, increment=1.0))
+    points = x3pio.ProfileLayer(np.zeros(3), np.arange(3), header=absolute)
+    assert points.x is not None
+    assert points.x.dtype == np.float64

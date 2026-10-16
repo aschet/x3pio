@@ -66,9 +66,13 @@ class Layer:
     Two layers are equal if they are of the same kind and have equal axes, placement and values,
     ``NaN`` equal to ``NaN``. Since the values can change, a layer is not hashable.
 
+    The arrays are held as ``float64``. An array of that type is kept as it is, so that writing to
+    the layer writes to it; an array of another type is converted, which makes a copy.
+
     :param z: The heights, shaped like the layer; ``NaN`` for a point that is not measured.
     :param x: The x coordinates if the x axis is absolute, otherwise ``None``.
     :param y: The y coordinates if the y axis is absolute, otherwise ``None``.
+
     :param header: The axes of the file, with their increments.
     :param placement: Where the view coordinate system lies in the global one; the identity by
         default.
@@ -76,17 +80,17 @@ class Layer:
 
     def __init__(
         self,
-        z: np.ndarray,
-        x: np.ndarray | None = None,
-        y: np.ndarray | None = None,
+        z: ArrayLike,
+        x: ArrayLike | None = None,
+        y: ArrayLike | None = None,
         *,
         header: Header,
         placement: Placement | None = None,
     ) -> None:
-        """Make a layer of arrays, which it keeps as they are."""
-        self._z = z
-        self._x = x
-        self._y = y
+        """Make a layer of arrays, which it holds as ``float64``."""
+        self._z = np.asarray(z, dtype=np.float64)
+        self._x = None if x is None else np.asarray(x, dtype=np.float64)
+        self._y = None if y is None else np.asarray(y, dtype=np.float64)
         self._header = header
         self._placement = Placement.identity() if placement is None else placement
 
@@ -101,7 +105,7 @@ class Layer:
         return self._placement
 
     @property
-    def z(self) -> np.ndarray:
+    def z(self) -> NDArray[np.float64]:
         """The heights in the stored shape; ``NaN`` for a point that is not measured.
 
         The array can be written to: ``layer.z[0, 1] = 1.0``, ``layer.z -= 1.0`` and
@@ -119,7 +123,7 @@ class Layer:
         _fill(self._z, value, "z")
 
     @property
-    def x(self) -> np.ndarray | None:
+    def x(self) -> NDArray[np.float64] | None:
         """The stored x coordinates in metres if the x axis is absolute, otherwise ``None``.
 
         With an incremental axis the coordinates follow from the place of a point, see
@@ -135,7 +139,7 @@ class Layer:
         _fill(_stored(self._x, "x"), value, "x")
 
     @property
-    def y(self) -> np.ndarray | None:
+    def y(self) -> NDArray[np.float64] | None:
         """The stored y coordinates in metres if the y axis is absolute, otherwise ``None``.
 
         See :attr:`x`.
